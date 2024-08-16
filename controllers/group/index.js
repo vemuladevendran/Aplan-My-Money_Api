@@ -126,21 +126,35 @@ const deleteGroup = async (req, res, next) => {
 
 const addMemberToGroup = async (req, res, next) => {
   try {
-    const group = await Group.findById(req.params.id);
+    const group = await Group.findById(req.params.groupId);
     if (!group) return res.status(404).json({ message: "Group not found" });
 
-    group.members.push(req.body);
+    const membersToAdd = req.body.members; // Expecting an array of members in the request body
+
+    if (!Array.isArray(membersToAdd) || membersToAdd.length === 0) {
+      return res.status(400).json({ message: "Members should be a non-empty array" });
+    }
+
+    // Add each member from the array to the group
+    membersToAdd.forEach(member => {
+      // Check if member is already in the group (to avoid duplicates)
+      const existingMember = group.members.find(m => m.user_id.toString() === member.user_id.toString());
+      if (!existingMember) {
+        group.members.push(member);
+      }
+    });
+
     await group.save();
     res.json(group);
   } catch (error) {
     console.log(error);
     next(error);
   }
-};
+}
 
 const removeMemberFromGroup = async (req, res, next) => {
   try {
-    const group = await Group.findById(req.params.id);
+    const group = await Group.findById(req.params.groupId);
     if (!group) return res.status(404).json({ message: "Group not found" });
 
     const member = group.members.id(req.params.memberId);
