@@ -21,7 +21,7 @@ const createUser = async (req, res, next) => {
   }
 };
 
-const getUser = async (req, res, next) => {
+const getUserById = async (req, res, next) => {
   try {
     const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ message: 'User not found' });
@@ -116,4 +116,4 @@ const getUserAndGroupBalances = async (req, res, next) => {
   };
 
 
-module.exports = { createUser, getUser, updateUser, deleteUser, getUserAndGroupBalances };
+module.exports = { createUser, getUserById, updateUser, deleteUser, getUserAndGroupBalances };
