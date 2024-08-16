@@ -11,7 +11,7 @@ const createSettlement = async (req, res, next) => {
   }
 };
 
-const getSettlement = async (req, res, next) => {
+const getSettlementById = async (req, res, next) => {
   try {
     const settlement = await Settlement.findById(req.params.id).populate('groupId settledBy settledWith');
     if (!settlement) return res.status(404).json({ message: 'Settlement not found' });
@@ -44,9 +44,50 @@ const deleteSettlement = async (req, res, next) => {
   }
 };
 
+const getAllSettlements = async (req, res, next) => {
+  try {
+    const userId = req.user.id; // User ID from the token
+
+    // Find all settlements involving the logged-in user
+    const settlements = await Settlement.find({
+      $or: [{ settledBy: userId }, { settledWith: userId }],
+    }).populate('groupId settledBy settledWith');
+
+    if (!settlements || settlements.length === 0) {
+      return res.status(404).json({ message: "No settlements found for this user" });
+    }
+
+    res.json(settlements);
+  } catch (error) {
+    console.log(error);
+    next(error);
+  }
+};
+
+const getAllSettlementsForGroup = async (req, res, next) => {
+  try {
+    const groupId = req.params.id; // Group ID from the request parameters
+
+    // Find all settlements related to the specific group
+    const settlements = await Settlement.find({ groupId: groupId }).populate('settledBy settledWith');
+
+    if (!settlements || settlements.length === 0) {
+      return res.status(404).json({ message: "No settlements found for this group" });
+    }
+
+    res.json(settlements);
+  } catch (error) {
+    console.log(error);
+    next(error);
+  }
+};
+
+
 module.exports = {
   createSettlement,
-  getSettlement,
+  getSettlementById,
   updateSettlement,
   deleteSettlement,
+  getAllSettlements,
+  getAllSettlementsForGroup
 };
