@@ -8,7 +8,7 @@ const createUser = async (req, res, next) => {
   try {
     const user = new User({ ...req.body, user_id: generateUserId() });
     await user.save();
-    return res.status(201).json('New Account created');
+    return res.status(201).json({message: 'New Account created'});
   } catch (error) {
     console.log(error);
   }
@@ -28,7 +28,7 @@ const loginUser = async (req, res, next) => {
     // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (!existingUser) {
-      return await createUser(req); // Ensure createUser function is defined and handles user creation
+       await createUser(req, res, next); // Ensure createUser function is defined and handles user creation
     }
 
     // Initialize the OAuth2Client with the correct client ID
@@ -40,23 +40,28 @@ const loginUser = async (req, res, next) => {
       audience: process.env.GOOGLE_CLIENT_ID, // Specify the client ID of your app
     });
 
-    if (existingUser) {
+    const currentUser = await User.findOne({ email });
+
+    if (currentUser) {
       const deviceData = req.body.loggedInDevices[0];
-      const deviceExists = existingUser.loggedInDevices.some(
+      const deviceExists = currentUser.loggedInDevices.some(
         (device) => device.deviceId === deviceData.deviceId
       );
 
       if (!deviceExists) {
-        existingUser.loggedInDevices.push(deviceData);
-        await existingUser.save(); // Save the updated user document
+        currentUser.loggedInDevices.push(deviceData);
+        await currentUser.save(); // Save the updated user document
       }
     }
 
+    console.log(currentUser, '---------');
+    
+
     const tokenData = {
-      name: existingUser.name,
-      email: existingUser.email,
-      googleImg: existingUser.googleImg,
-      fullData: existingUser
+      name: currentUser.name,
+      email: currentUser.email,
+      googleImg: currentUser.googleImg,
+      fullData: currentUser
     };
 
     const token = await generateToken(tokenData);
