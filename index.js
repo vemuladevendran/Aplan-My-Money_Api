@@ -7,7 +7,7 @@ const cors = require("cors")
 const morgan = require("morgan")
 
 require('./db')
-
+const userRoutes = require("./routes/user");
 
 const app = express();
 app.use(express.urlencoded({extended: true}));
@@ -16,7 +16,8 @@ app.use(express.json());
 app.use(cors());
 app.use("/static", express.static("uploads"));
 
-
+// routes
+userRoutes(app);
 
 
 // error middleware 

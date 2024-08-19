@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const { v4: uuidv4 } = required("uuid");
+const { v4: uuidv4 } = require("uuid");
 const options = {
   timestamps: true,
 };
@@ -12,7 +12,7 @@ const UserSchema = new mongoose.Schema(
       unique: true,
     },
     user_id: {
-      typr: String,
+      type: String,
       unique: true,
     },
     name: {
@@ -65,6 +65,17 @@ const UserSchema = new mongoose.Schema(
       default: "Registered",
       trim: true,
     },
+    googleImg:{
+      type: String,
+      default: ''
+    },
+    loggedInDevices: [
+      {
+        platform: String,
+        operatingSystem: String,
+        deviceId: String
+      }
+    ],
     notifications: [
       {
         message: String,

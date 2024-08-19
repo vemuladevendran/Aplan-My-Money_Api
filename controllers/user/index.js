@@ -1,30 +1,76 @@
-const User = require('../../models/user.js');
-const Expense = require('../../models/expense.js');
-const { generateUserId } = require('../../utility/generateid.js');
+const User = require("../../models/user.js");
+const Expense = require("../../models/expense.js");
+const { generateUserId } = require("../../utility/generateid.js");
+const { OAuth2Client } = require("google-auth-library");
+const {generateToken} = require("../../services/token.js");
 
 const createUser = async (req, res, next) => {
   try {
-    const { email, phone_number } = req.body;
-    
-    // Check if email or phone number already exists
-    const existingUser = await User.findOne({ $or: [{ email }, { phone_number }] });
-    if (existingUser) {
-      return res.status(400).json({ message: 'Email or Phone Number already exists' });
-    }
-
     const user = new User({ ...req.body, user_id: generateUserId() });
     await user.save();
-    res.status(201).json(user);
+    return res.status(201).json(user);
   } catch (error) {
     console.log(error);
-    next(error);
+  }
+};
+
+const loginUser = async (req, res, next) => {
+  try {
+    const { email, idToken } = req.body;
+
+    // Validate that email and idToken are provided
+    if (!email || !idToken) {
+      return res
+        .status(400)
+        .json({ message: "Email and ID Token are required." });
+    }
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (!existingUser) {
+      return await createUser(req); // Ensure createUser function is defined and handles user creation
+    }
+
+    // Initialize the OAuth2Client with the correct client ID
+    const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+    // Verify the ID token
+    const ticket = await client.verifyIdToken({
+      idToken,
+      audience: process.env.GOOGLE_CLIENT_ID, // Specify the client ID of your app
+    });
+
+    if (existingUser) {
+      const deviceData = req.body.loggedInDevices[0];
+      const deviceExists = existingUser.loggedInDevices.some(
+        (device) => device.deviceId === deviceData.deviceId
+      );
+
+      if (!deviceExists) {
+        existingUser.loggedInDevices.push(deviceData);
+        await existingUser.save(); // Save the updated user document
+      }
+    }
+
+    const tokenData = {
+      name: existingUser.name,
+      email: existingUser.email,
+      googleImg: existingUser.googleImg,
+      fullData: existingUser
+    };
+
+    const token = await generateToken(tokenData);
+    return res.status(200).json({ token: token });
+    
+  } catch (error) {
+    console.error(error);
   }
 };
 
 const getUserById = async (req, res, next) => {
   try {
     const user = await User.findById(req.params.id);
-    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (!user) return res.status(404).json({ message: "User not found" });
     res.json(user);
   } catch (error) {
     console.log(error);
@@ -34,8 +80,10 @@ const getUserById = async (req, res, next) => {
 
 const updateUser = async (req, res, next) => {
   try {
-    const user = await User.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    if (!user) return res.status(404).json({ message: 'User not found' });
+    const user = await User.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+    });
+    if (!user) return res.status(404).json({ message: "User not found" });
     res.json(user);
   } catch (error) {
     console.log(error);
@@ -45,8 +93,12 @@ const updateUser = async (req, res, next) => {
 
 const deleteUser = async (req, res, next) => {
   try {
-    const user = await User.findByIdAndUpdate(req.params.id, { status: 'Inactive' }, { new: true });
-    if (!user) return res.status(404).json({ message: 'User not found' });
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { status: "Inactive" },
+      { new: true }
+    );
+    if (!user) return res.status(404).json({ message: "User not found" });
     res.json(user);
   } catch (error) {
     console.log(error);
@@ -55,65 +107,75 @@ const deleteUser = async (req, res, next) => {
 };
 
 const getUserAndGroupBalances = async (req, res, next) => {
-    try {
-      const userId = req.user.id; // User ID from the token
-  
-      const user = await User.findById(userId).populate('groups');
-      if (!user) return res.status(404).json({ message: 'User not found' });
-  
-      let totalAmountYouOwe = 0;
-      let totalAmountYouAreOwed = 0;
-      const groupBalances = [];
-  
-      // Iterate over all groups the user is a part of
-      for (const group of user.groups) {
-        let groupTotalOwe = 0;
-        let groupTotalOwed = 0;
-  
-        const expenses = await Expense.find({ group_id: group._id, splits: { $elemMatch: { user_id: userId } } });
-  
-        expenses.forEach(expense => {
-          const userSplit = expense.splits.find(split => split.user_id.toString() === userId.toString());
-          if (expense.created_by.toString() === userId.toString()) {
-            groupTotalOwed += userSplit.amount;
-          } else {
-            groupTotalOwe += userSplit.amount;
-          }
-        });
-  
-        const groupBalance = groupTotalOwed - groupTotalOwe;
-  
-        totalAmountYouOwe += groupTotalOwe;
-        totalAmountYouAreOwed += groupTotalOwed;
-  
-        groupBalances.push({
-          groupId: group._id,
-          groupName: group.name,
-          groupTotalOwe,
-          groupTotalOwed,
-          groupBalance,
-        });
-      }
-  
-      const totalBalance = totalAmountYouAreOwed - totalAmountYouOwe;
-  
-      res.json({
-        user: {
-          id: user._id,
-          name: user.name,
-          email: user.email,
-          phone_number: user.phone_number,
-          totalBalance,
-          totalAmountYouOwe,
-          totalAmountYouAreOwed,
-        },
-        groupBalances,
+  try {
+    const userId = req.user.id; // User ID from the token
+
+    const user = await User.findById(userId).populate("groups");
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    let totalAmountYouOwe = 0;
+    let totalAmountYouAreOwed = 0;
+    const groupBalances = [];
+
+    // Iterate over all groups the user is a part of
+    for (const group of user.groups) {
+      let groupTotalOwe = 0;
+      let groupTotalOwed = 0;
+
+      const expenses = await Expense.find({
+        group_id: group._id,
+        splits: { $elemMatch: { user_id: userId } },
       });
-    } catch (error) {
-      console.log(error);
-      next(error);
+
+      expenses.forEach((expense) => {
+        const userSplit = expense.splits.find(
+          (split) => split.user_id.toString() === userId.toString()
+        );
+        if (expense.created_by.toString() === userId.toString()) {
+          groupTotalOwed += userSplit.amount;
+        } else {
+          groupTotalOwe += userSplit.amount;
+        }
+      });
+
+      const groupBalance = groupTotalOwed - groupTotalOwe;
+
+      totalAmountYouOwe += groupTotalOwe;
+      totalAmountYouAreOwed += groupTotalOwed;
+
+      groupBalances.push({
+        groupId: group._id,
+        groupName: group.name,
+        groupTotalOwe,
+        groupTotalOwed,
+        groupBalance,
+      });
     }
-  };
 
+    const totalBalance = totalAmountYouAreOwed - totalAmountYouOwe;
 
-module.exports = { createUser, getUserById, updateUser, deleteUser, getUserAndGroupBalances };
+    res.json({
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone_number: user.phone_number,
+        totalBalance,
+        totalAmountYouOwe,
+        totalAmountYouAreOwed,
+      },
+      groupBalances,
+    });
+  } catch (error) {
+    console.log(error);
+    next(error);
+  }
+};
+
+module.exports = {
+  getUserById,
+  updateUser,
+  deleteUser,
+  getUserAndGroupBalances,
+  loginUser,
+};
