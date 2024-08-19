@@ -8,7 +8,7 @@ const createUser = async (req, res, next) => {
   try {
     const user = new User({ ...req.body, user_id: generateUserId() });
     await user.save();
-    return res.status(201).json(user);
+    return res.status(201).json('New Account created');
   } catch (error) {
     console.log(error);
   }
@@ -61,7 +61,7 @@ const loginUser = async (req, res, next) => {
 
     const token = await generateToken(tokenData);
     return res.status(200).json({ token: token });
-    
+
   } catch (error) {
     console.error(error);
   }
