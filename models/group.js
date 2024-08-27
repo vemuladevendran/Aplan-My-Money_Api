@@ -53,13 +53,15 @@ const GroupSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    group_default_image: {
+      type: String,
+    },
     cover_photo: {
       type: String,
       trim: true,
     },
     group_type: {
       type: String,
-      enum: ["Home", "Office", "Friends", "Family", "Other"],
       default: "Other",
       trim: true,
     },

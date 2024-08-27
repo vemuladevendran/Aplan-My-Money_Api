@@ -4,7 +4,15 @@ const { calculateGroupFinancials } = require("../../utility/financialCalculation
 
 const createGroup = async (req, res, next) => {
   try {
-    const group = new Group({ ...req.body, group_id: generateGroupId() });
+    const userId = req.user.id; // Get the current logged-in user ID from the token
+
+    // Create a new group with the userId set as the `created_by` field
+    const group = new Group({ 
+      ...req.body, 
+      group_id: generateGroupId(),
+      created_by: userId 
+    });
+
     await group.save();
     res.status(201).json(group);
   } catch (error) {

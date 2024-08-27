@@ -29,6 +29,9 @@ async function verifyToken(token) {
         throw new TypeError('Token must not be empty');
     }
 
+    console.log(token, '-----------');
+    
+
     return new Promise((resolve, reject) => {
         jwt.verify(token, jwtSecret, (error, decodedToken) => {
             if (error) {
