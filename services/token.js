@@ -2,20 +2,27 @@
 
 const jwt = require('jsonwebtoken');
 
-// Set the expiration period and secret key from environment variables
-const tokenExpirePeriod = process.env.TOKEN_EXPIRE_PERIOD || '3d';
+
+const tokenExpirePeriod = '3d';
 const jwtSecret = process.env.JWT_SECRET;
 
-// Method to generate a JWT token
-async function generateToken(payload, expiresIn = tokenExpirePeriod) {
-    if (!payload || typeof payload !== 'object') {
-        throw new TypeError('Token payload must be a non-empty object');
+async function generateToken(payLoad, expiresIn = tokenExpirePeriod) {
+    const isObject = (typeof payLoad === 'object');
+
+    if (!payLoad) {
+        const error = new TypeError('Token Payload Should Not Be Empty');
+        throw error;
+    }
+
+    if (!isObject) {
+        const error = new TypeError('Token Payload Must Be An Object');
+        throw error;
     }
 
     return new Promise((resolve, reject) => {
-        jwt.sign(payload, jwtSecret, { expiresIn }, (error, token) => {
+        jwt.sign(payLoad, jwtSecret, { expiresIn }, (error, token) => {
             if (error) {
-                reject(new Error(`Error generating token: ${error.message}`));
+                reject(error);
             } else {
                 resolve(token);
             }
@@ -23,25 +30,23 @@ async function generateToken(payload, expiresIn = tokenExpirePeriod) {
     });
 }
 
-// Method to verify a JWT token
 async function verifyToken(token) {
     if (!token) {
-        throw new TypeError('Token must not be empty');
+        const error = new TypeError('Token Should Not Be Empty');
+        throw error;
     }
-
-    console.log(token, '-----------');
-    
 
     return new Promise((resolve, reject) => {
         jwt.verify(token, jwtSecret, (error, decodedToken) => {
             if (error) {
-                reject(new Error(`Error verifying token: ${error.message}`));
+                reject(error);
             } else {
                 resolve(decodedToken);
             }
         });
     });
 }
+
 
 module.exports = {
     generateToken,
