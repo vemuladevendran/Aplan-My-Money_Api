@@ -54,7 +54,8 @@ const getAllActiveGroups = async (req, res, next) => {
         return {
           groupId: group._id,
           groupName: group.name,
-          groupImage: group.group_image,
+          groupImage: group.group_default_image,
+          groupType: group.group_type,
           totalBalance,
           totalAmountYouOwe,
           totalAmountYouAreOwed,
