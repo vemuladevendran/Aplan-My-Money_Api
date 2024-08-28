@@ -30,7 +30,7 @@ const getAllActiveGroups = async (req, res, next) => {
 
     // Find all active groups the user is part of
     const groups = await Group.find({
-      members: { $elemMatch: { user_id: userId, is_exist: true } },
+      members: { $elemMatch: { _id: userId, is_exist: true } },
       isDeleted: false,
     }).populate("members.user_id");
 

@@ -54,8 +54,6 @@ const loginUser = async (req, res, next) => {
       }
     }
 
-    console.log(currentUser, '---------');
-    
 
     const tokenData = {
       id: currentUser._id,

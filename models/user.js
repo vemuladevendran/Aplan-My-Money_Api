@@ -64,16 +64,16 @@ const UserSchema = new mongoose.Schema(
       default: "Registered",
       trim: true,
     },
-    googleImg:{
+    googleImg: {
       type: String,
-      default: ''
+      default: "",
     },
     loggedInDevices: [
       {
         platform: String,
         operatingSystem: String,
-        deviceId: String
-      }
+        deviceId: String,
+      },
     ],
     notifications: [
       {
@@ -93,6 +93,10 @@ const UserSchema = new mongoose.Schema(
     ],
     last_notification_read: {
       type: Date,
+    },
+    isDeleted: {
+      type: Boolean,
+      default: false,
     },
   },
   options
