@@ -7,13 +7,25 @@ const {
 const createGroup = async (req, res, next) => {
   try {
     const userId = req.user.id; // Get the current logged-in user ID from the token
+    const userName = req.user.name;
+    const userEmail = req.user.email;
     console.log(req.user, userId, "details-------");
 
-    // Create a new group with the userId set as the `created_by` field
+    // Create the initial member object for the group creator
+    const creatorMember = {
+      user_id: userId,
+      name: userName,
+      email: userEmail,
+      status: "active", 
+      is_exist: true,
+      balance: 0, // Initial balance set to 0
+    };
+
     const group = new Group({
       ...req.body,
       group_id: generateGroupId(),
       created_by: userId,
+      members: [creatorMember], // Add the creator as the first member
     });
 
     await group.save();
