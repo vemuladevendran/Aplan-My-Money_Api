@@ -78,7 +78,7 @@ const getAllActiveGroups = async (req, res, next) => {
 const getGroupById = async (req, res, next) => {
   try {
     const userId = req.user.id; // User ID from the token
-    const groupId = req.params.id;
+    const groupId = req.params.groupId;
 
     const group = await Group.findById(groupId).populate("members.user_id");
     if (!group) return res.status(404).json({ message: "Group not found" });
