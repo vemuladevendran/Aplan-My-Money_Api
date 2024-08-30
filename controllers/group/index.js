@@ -93,7 +93,8 @@ const getGroupById = async (req, res, next) => {
     const groupData = {
       groupId: group._id,
       groupName: group.name,
-      groupImage: group.group_image,
+      groupImage: group.group_default_image,
+      groupType: group.group_type,
       totalBalance,
       totalAmountYouOwe,
       totalAmountYouAreOwed,
@@ -105,7 +106,6 @@ const getGroupById = async (req, res, next) => {
       })),
       groupDetails: {
         createdBy: group.created_by,
-        groupType: group.group_type,
         groupReminders: group.group_reminders,
         coverPhoto: group.cover_photo,
       },
