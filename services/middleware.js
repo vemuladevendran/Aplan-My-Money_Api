@@ -9,8 +9,6 @@ const authenticateToken = async (req, res, next) => {
 
   try {
     const decoded = await verifyToken(token);
-    console.log(decoded);
-    
     req.user = decoded;
     next();
 } catch (err) {

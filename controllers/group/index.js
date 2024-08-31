@@ -9,8 +9,7 @@ const createGroup = async (req, res, next) => {
     const userId = req.user.id; // Get the current logged-in user ID from the token
     const userName = req.user.name;
     const userEmail = req.user.email;
-    console.log(req.user, userId, "details-------");
-
+    
     // Create the initial member object for the group creator
     const creatorMember = {
       user_id: userId,
@@ -80,8 +79,12 @@ const getGroupById = async (req, res, next) => {
     const userId = req.user.id; // User ID from the token
     const groupId = req.params.groupId;
 
+    // Populate user details in the members array
     const group = await Group.findById(groupId).populate("members.user_id");
     if (!group) return res.status(404).json({ message: "Group not found" });
+
+    // Check if the population was successful and log group members
+    console.log(group.members, "Populated Members");
 
     const {
       totalBalance,
@@ -98,11 +101,12 @@ const getGroupById = async (req, res, next) => {
       totalBalance,
       totalAmountYouOwe,
       totalAmountYouAreOwed,
-      members: Object.entries(memberDetails).map(([userId, details]) => ({
-        memberId: userId,
-        name: details.name,
-        amountOwedToYou: details.amountOwedToYou || 0,
-        amountYouOwe: details.amountYouOwe || 0,
+      members: group.members.map((member) => ({
+        memberId: member.user_id ? member.user_id._id : member._id,
+        name: member.user_id ? member.user_id.name : member.name,
+        email: member.user_id ? member.user_id.email : member.email,
+        amountOwedToYou: memberDetails[member.user_id._id]?.amountOwedToYou || 0,
+        amountYouOwe: memberDetails[member.user_id._id]?.amountYouOwe || 0,
       })),
       groupDetails: {
         createdBy: group.created_by,
@@ -117,6 +121,7 @@ const getGroupById = async (req, res, next) => {
     next(error);
   }
 };
+
 
 const updateGroup = async (req, res, next) => {
   try {
