@@ -57,6 +57,7 @@ const loginUser = async (req, res, next) => {
 
     const tokenData = {
       id: currentUser._id,
+      userId: currentUser.user_id,
       name: currentUser.name,
       email: currentUser.email,
       googleImg: currentUser.googleImg,
