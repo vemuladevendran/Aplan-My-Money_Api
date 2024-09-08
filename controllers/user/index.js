@@ -8,7 +8,32 @@ const createUser = async (req, res, next) => {
   try {
     const user = new User({ ...req.body, user_id: generateUserId() });
     await user.save();
-    return res.status(201).json({ message: "New Account created" });
+    const email = req.body.email;
+    const currentUser = await User.findOne({ email });
+
+    if (currentUser) {
+      const deviceData = req.body.loggedInDevices[0];
+      const deviceExists = currentUser.loggedInDevices.some(
+        (device) => device.deviceId === deviceData.deviceId
+      );
+
+      if (!deviceExists) {
+        currentUser.loggedInDevices.push(deviceData);
+        await currentUser.save(); // Save the updated user document
+      }
+    }
+
+    const tokenData = {
+      id: currentUser._id,
+      userId: currentUser.user_id,
+      name: currentUser.name,
+      email: currentUser.email,
+      googleImg: currentUser.googleImg,
+      fullData: currentUser,
+    };
+
+    const token = await generateToken(tokenData);
+    return res.status(200).json({ token: token });
   } catch (error) {
     console.log(error);
   }
@@ -95,7 +120,9 @@ const getUsers = async (req, res, next) => {
     }
 
     // Select only the fields needed
-    const users = await User.find(filters).select('name email _id user_id googleImg');
+    const users = await User.find(filters).select(
+      "name email _id user_id googleImg"
+    );
 
     return res.json(users);
   } catch (error) {
@@ -103,7 +130,6 @@ const getUsers = async (req, res, next) => {
     next(error);
   }
 };
-
 
 const updateUser = async (req, res, next) => {
   try {
