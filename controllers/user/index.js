@@ -2,13 +2,13 @@ const User = require("../../models/user.js");
 const Expense = require("../../models/expense.js");
 const { generateUserId } = require("../../utility/generateid.js");
 const { OAuth2Client } = require("google-auth-library");
-const {generateToken} = require("../../services/token.js");
+const { generateToken } = require("../../services/token.js");
 
 const createUser = async (req, res, next) => {
   try {
     const user = new User({ ...req.body, user_id: generateUserId() });
     await user.save();
-    return res.status(201).json({message: 'New Account created'});
+    return res.status(201).json({ message: "New Account created" });
   } catch (error) {
     console.log(error);
   }
@@ -28,7 +28,7 @@ const loginUser = async (req, res, next) => {
     // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (!existingUser) {
-       await createUser(req, res, next); // Ensure createUser function is defined and handles user creation
+      await createUser(req, res, next); // Ensure createUser function is defined and handles user creation
     }
 
     // Initialize the OAuth2Client with the correct client ID
@@ -54,19 +54,17 @@ const loginUser = async (req, res, next) => {
       }
     }
 
-
     const tokenData = {
       id: currentUser._id,
       userId: currentUser.user_id,
       name: currentUser.name,
       email: currentUser.email,
       googleImg: currentUser.googleImg,
-      fullData: currentUser
+      fullData: currentUser,
     };
 
     const token = await generateToken(tokenData);
     return res.status(200).json({ token: token });
-
   } catch (error) {
     console.error(error);
   }
@@ -82,6 +80,30 @@ const getUserById = async (req, res, next) => {
     next(error);
   }
 };
+
+const getUsers = async (req, res, next) => {
+  try {
+    const filters = {
+      isDeleted: false,
+    };
+
+    // If no userId is provided, return an empty array
+    if (!req.query.userId) return res.json([]);
+
+    if (req.query.userId) {
+      filters.user_id = new RegExp(req.query.userId, "i");
+    }
+
+    // Select only the fields needed
+    const users = await User.find(filters).select('name email _id user_id googleImg');
+
+    return res.json(users);
+  } catch (error) {
+    console.log(error);
+    next(error);
+  }
+};
+
 
 const updateUser = async (req, res, next) => {
   try {
@@ -179,6 +201,7 @@ const getUserAndGroupBalances = async (req, res, next) => {
 
 module.exports = {
   getUserById,
+  getUsers,
   updateUser,
   deleteUser,
   getUserAndGroupBalances,

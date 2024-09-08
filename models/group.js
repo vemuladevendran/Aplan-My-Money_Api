@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const { v4: uuidv4 } = require("uuid");
 
-// balance split schema
+// Balance split schema
 const DebtSchema = new mongoose.Schema({
   currency_code: String,
   from_id: {
@@ -14,23 +14,43 @@ const DebtSchema = new mongoose.Schema({
   },
   amount: Number,
 });
-// group members schema
+
+// Group members schema
 const MemberSchema = new mongoose.Schema({
-  user_id: {
+  id: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
+    ref: "User", // Reference to User model
   },
-  name: String,
-  email: String,
-  status: String,
+  user_id: {
+    type: String, // A unique string identifier (like a username or external ID)
+    required: true, // Ensure user_id is always provided
+  },
+  name: {
+    type: String,
+    required: true, // Ensure name is provided
+    trim: true,
+  },
+  email: {
+    type: String,
+    required: true, // Ensure email is provided
+    trim: true,
+  },
+  status: {
+    type: String,
+    enum: ["active", "inactive", "pending"], // Example statuses; modify as needed
+    default: "active",
+  },
   is_exist: {
     type: Boolean,
     default: true,
   },
-  balance: Number,
+  balance: {
+    type: Number,
+    default: 0, // Default balance to 0
+  },
 });
 
-// complete group schema
+// Complete group schema
 const GroupSchema = new mongoose.Schema(
   {
     id: {
@@ -47,15 +67,13 @@ const GroupSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
-    members: [MemberSchema],
-    original_debts: [DebtSchema],
+    members: [MemberSchema], // Array of members
+    original_debts: [DebtSchema], // Array of debts
     group_image: {
       type: String,
       trim: true,
     },
-    group_default_image: {
-      type: String,
-    },
+    group_default_image: String,
     cover_photo: {
       type: String,
       trim: true,

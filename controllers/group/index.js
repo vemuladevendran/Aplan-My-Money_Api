@@ -1,3 +1,5 @@
+const mongoose = require("mongoose");
+
 const Group = require("../../models/group.js");
 const { generateGroupId } = require("../../utility/generateid.js");
 const {
@@ -6,12 +8,14 @@ const {
 
 const createGroup = async (req, res, next) => {
   try {
-    const userId = req.user.id; // Get the current logged-in user ID from the token
+    const userId = req.user.userId; // Get the current logged-in user ID from the token
+    const id = req.user.id; // Get the current logged-in user ID from the token
     const userName = req.user.name;
     const userEmail = req.user.email;
-    
+
     // Create the initial member object for the group creator
     const creatorMember = {
+      id: id,
       user_id: userId,
       name: userName,
       email: userEmail,
@@ -41,9 +45,9 @@ const getAllActiveGroups = async (req, res, next) => {
 
     // Find all active groups the user is part of
     const groups = await Group.find({
-      members: { $elemMatch: { user_id: userId, is_exist: true } },
+      members: { $elemMatch: { id: userId, is_exist: true } },
       isDeleted: false,
-    }).populate("members.user_id");
+    }).populate("members.id");
 
     const groupData = await Promise.all(
       groups.map(async (group) => {
@@ -59,9 +63,9 @@ const getAllActiveGroups = async (req, res, next) => {
           totalAmountYouOwe,
           totalAmountYouAreOwed,
           members: group.members.map((member) => ({
-            memberId: member.user_id._id,
-            name: member.user_id.name,
-            email: member.user_id.email,
+            memberId: member.id._id,
+            name: member.id.name,
+            email: member.id.email,
           })),
         };
       })
@@ -123,6 +127,7 @@ const getGroupById = async (req, res, next) => {
 };
 
 
+
 const updateGroup = async (req, res, next) => {
   try {
     const group = await Group.findByIdAndUpdate(req.params.id, req.body, {
@@ -151,12 +156,13 @@ const deleteGroup = async (req, res, next) => {
   }
 };
 
+
 const addMemberToGroup = async (req, res, next) => {
   try {
     const group = await Group.findById(req.params.groupId);
     if (!group) return res.status(404).json({ message: "Group not found" });
 
-    const membersToAdd = req.body.members; // Expecting an array of members in the request body
+    const membersToAdd = req.body; // Expecting an array of members in the request body
 
     if (!Array.isArray(membersToAdd) || membersToAdd.length === 0) {
       return res
@@ -164,16 +170,32 @@ const addMemberToGroup = async (req, res, next) => {
         .json({ message: "Members should be a non-empty array" });
     }
 
-    // Add each member from the array to the group
-    membersToAdd.forEach((member) => {
-      // Check if member is already in the group (to avoid duplicates)
-      const existingMember = group.members.find(
-        (m) => m.user_id.toString() === member.user_id.toString()
-      );
-      if (!existingMember) {
-        group.members.push(member);
+    for (const member of membersToAdd) {
+      // Ensure 'id' is a valid ObjectId
+
+      if (!member._id || !mongoose.Types.ObjectId.isValid(member._id)) {
+        return res
+          .status(400)
+          .json({ message: `Invalid member id: ${member._id}` });
       }
-    });
+
+      // Check if the member with the given 'id' already exists in the group
+      const existingMember = group.members.find(
+        (m) => m.id.toString() === member._id.toString()
+      );
+
+      if (!existingMember) {
+        group.members.push({
+          id: new mongoose.Types.ObjectId(member._id), // Ensure id is stored as ObjectId
+          user_id: member.user_id, 
+          name: member.name,
+          email: member.email,
+          status: member.status || "active",
+          is_exist: member.is_exist !== undefined ? member.is_exist : true,
+          balance: member.balance || 0,
+        });
+      }
+    }
 
     await group.save();
     res.json(group);
@@ -182,6 +204,9 @@ const addMemberToGroup = async (req, res, next) => {
     next(error);
   }
 };
+
+
+
 
 const removeMemberFromGroup = async (req, res, next) => {
   try {
