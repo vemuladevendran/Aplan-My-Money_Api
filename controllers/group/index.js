@@ -13,6 +13,7 @@ const createGroup = async (req, res, next) => {
     const userName = req.user.name;
     const userEmail = req.user.email;
 
+
     // Create the initial member object for the group creator
     const creatorMember = {
       id: id,
@@ -27,7 +28,7 @@ const createGroup = async (req, res, next) => {
     const group = new Group({
       ...req.body,
       group_id: generateGroupId(),
-      created_by: userId,
+      created_by: id,
       members: [creatorMember], // Add the creator as the first member
     });
 
