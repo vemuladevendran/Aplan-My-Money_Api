@@ -12,7 +12,12 @@ const ExpenseSchema = new mongoose.Schema(
       type: String,
       unique: true,
     },
-
+    expense_type: {
+      type: String,
+    },
+    expense_name: {
+      type: String,
+    },
     group_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Group",
@@ -51,9 +56,9 @@ const ExpenseSchema = new mongoose.Schema(
       },
     ],
     isDeleted: {
-        type: Boolean,
-        default: false
-    }
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );
