@@ -58,6 +58,18 @@ const UserSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    total_send: {
+      type: Number,
+      default: 0,
+    },
+    total_received: {
+      type: Number,
+      default: 0,
+    },
+    total_budget_amount: {
+      type: Number,
+      default: 0,
+    },
     status: {
       type: String,
       enum: ["Registered", "Active", "Inactive"],
