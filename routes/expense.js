@@ -15,5 +15,4 @@ module.exports = function expenseRoutes(app) {
     app.put("/api/v1/expense/:id", authenticateToken, updateExpense);
     app.delete("/api/v1/expense/:id", authenticateToken, deleteExpense);
     app.get("/api/v1/expense/group/:groupId", authenticateToken, getAllExpensesForGroup);
-
 }
