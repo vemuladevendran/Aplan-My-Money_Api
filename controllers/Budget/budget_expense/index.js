@@ -79,6 +79,31 @@ const budgetCreateExpense = async (req, res, next) => {
       next(error);
     }
   };
+
+  const budgetSyncExpenses = async (req, res, next) => {
+    try {
+      const { expenses } = req.body; // Array of new expenses from frontend
+  
+      if (!expenses || expenses.length === 0) {
+        return res.status(400).json({ message: "No expenses to sync" });
+      }
+  
+      // Assign created_by field for all expenses
+      const expensesWithUser = expenses.map(exp => ({
+        ...exp,
+        created_by: req.user.id, // Ensure expenses are linked to the user
+      }));
+  
+      // Insert all new expenses at once
+      const insertedExpenses = await BudgetExpense.insertMany(expensesWithUser);
+  
+      res.json({ message: "Expenses synced successfully", data: insertedExpenses });
+    } catch (error) {
+      console.log(error);
+      next(error);
+    }
+  };
+  
   
   module.exports = {
     budgetCreateExpense,
@@ -86,4 +111,5 @@ const budgetCreateExpense = async (req, res, next) => {
     budgetUpdateExpense,
     budgetDeleteExpense,
     budgetGetAllExpenses,
+    budgetSyncExpenses
   }

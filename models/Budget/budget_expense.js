@@ -48,7 +48,7 @@ const BudgetExpenseSchema = new mongoose.Schema(
     },
     group_name: {
       type: String,
-      default: "home_money", // Default group for expenses if user does not specify one
+      default: "General", // Default group for expenses if user does not specify one
     },
     // group_id: {
     //   type: mongoose.Schema.Types.ObjectId,
