@@ -59,6 +59,22 @@ const googleLoginUser = async (req, res, next) => {
 // Create a user using the app's email and password
 const createUserApp = async (req, res, next) => {
   try {
+    const filters = {
+      $or: [
+        {
+          phone_number: req.body.phone_number,
+        },
+        {
+          email: req.body.email,
+        },
+      ],
+    };
+
+    const doc = await User.findOne(filters);
+    if (doc) {
+      return res.status(400).json(" Email Is Already OR Mobile Number Exist");
+    }
+
     const currentUser = await createUser(req.body, true);  // Password is required for app login
 
     // Handle device login logic
