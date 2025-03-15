@@ -2,96 +2,97 @@ const User = require("../../models/user.js");
 const Expense = require("../../models/expense.js");
 const { generateUserId } = require("../../utility/generateid.js");
 const { OAuth2Client } = require("google-auth-library");
-const { generateToken } = require("../../services/token.js");
+const { hash, verify } = require("../../services/password.js");
+const { handleDeviceLogin, generateUserToken } = require("../helper/index.js");
 
-const createUser = async (req, res, next) => {
-  try {
-    const user = new User({ ...req.body, user_id: generateUserId() });
-    await user.save();
-    const email = req.body.email;
-    const currentUser = await User.findOne({ email });
 
-    if (currentUser) {
-      const deviceData = req.body.loggedInDevices[0];
-      const deviceExists = currentUser.loggedInDevices.some(
-        (device) => device.deviceId === deviceData.deviceId
-      );
 
-      if (!deviceExists) {
-        currentUser.loggedInDevices.push(deviceData);
-        await currentUser.save(); // Save the updated user document
-      }
-    }
-
-    const tokenData = {
-      id: currentUser._id,
-      userId: currentUser.user_id,
-      name: currentUser.name,
-      email: currentUser.email,
-      googleImg: currentUser.googleImg,
-      fullData: currentUser,
-    };
-
-    const token = await generateToken(tokenData);
-    return res.status(200).json({ token: token });
-  } catch (error) {
-    console.log(error);
+// Method to create a new user (common for both Google and app login)
+const createUser = async (userData, passwordRequired = false) => {
+  if (passwordRequired) {
+    userData.password = await hash(userData.password);  // Hash the password if required
   }
+
+  const user = new User({ ...userData, user_id: generateUserId() });
+  await user.save();
+  return user;
 };
 
-const loginUser = async (req, res, next) => {
+// Google login handler
+const googleLoginUser = async (req, res, next) => {
   try {
     const { email, idToken } = req.body;
 
-    // Validate that email and idToken are provided
     if (!email || !idToken) {
-      return res
-        .status(400)
-        .json({ message: "Email and ID Token are required." });
+      return res.status(400).json({ message: "Email and ID Token are required." });
     }
 
-    // Check if user already exists
     const existingUser = await User.findOne({ email });
+
+    // If user doesn't exist, create them using Google login data
+    let currentUser;
     if (!existingUser) {
-      await createUser(req, res, next); // Ensure createUser function is defined and handles user creation
+      currentUser = await createUser(req.body, false);  // No password needed for Google login
+    } else {
+      currentUser = existingUser;
     }
 
-    // Initialize the OAuth2Client with the correct client ID
     const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-
-    // Verify the ID token
-    const ticket = await client.verifyIdToken({
+    await client.verifyIdToken({
       idToken,
-      audience: process.env.GOOGLE_CLIENT_ID, // Specify the client ID of your app
+      audience: process.env.GOOGLE_CLIENT_ID,  // Ensure the client ID matches
     });
 
-    const currentUser = await User.findOne({ email });
+    // Handle device login logic
+    await handleDeviceLogin(currentUser, req.body.loggedInDevices[0]);
 
-    if (currentUser) {
-      const deviceData = req.body.loggedInDevices[0];
-      const deviceExists = currentUser.loggedInDevices.some(
-        (device) => device.deviceId === deviceData.deviceId
-      );
+    // Generate and send the token
+    const token = await generateUserToken(currentUser);
+    return res.status(200).json({ token });
 
-      if (!deviceExists) {
-        currentUser.loggedInDevices.push(deviceData);
-        await currentUser.save(); // Save the updated user document
-      }
-    }
-
-    const tokenData = {
-      id: currentUser._id,
-      userId: currentUser.user_id,
-      name: currentUser.name,
-      email: currentUser.email,
-      googleImg: currentUser.googleImg,
-      fullData: currentUser,
-    };
-
-    const token = await generateToken(tokenData);
-    return res.status(200).json({ token: token });
   } catch (error) {
     console.error(error);
+    next(error);
+  }
+};
+
+// Create a user using the app's email and password
+const createUserApp = async (req, res, next) => {
+  try {
+    const currentUser = await createUser(req.body, true);  // Password is required for app login
+
+    // Handle device login logic
+    await handleDeviceLogin(currentUser, req.body.loggedInDevices[0]);
+
+    // Generate and send the token
+    const token = await generateUserToken(currentUser);
+    return res.status(200).json({ token });
+
+  } catch (error) {
+    console.log(error);
+    next(error);
+  }
+};
+
+// App login handler
+const login = async (req, res, next) => {
+  try {
+    const doc = await User.findOne({ isDeleted: false, email: req.body.email });
+    if (!doc) return res.status(400).json({ message: 'Email is not found' });
+
+    const isPasswordMatch = await verify(req.body.password, doc.password);
+    if (!isPasswordMatch) return res.status(400).json({ message: 'Invalid password' });
+
+    // Handle device login logic
+    await handleDeviceLogin(doc, req.body.loggedInDevices[0]);
+
+    // Generate and send the token
+    const token = await generateUserToken(doc);
+    return res.status(200).json({ token });
+
+  } catch (error) {
+    console.log(error);
+    next(error);
   }
 };
 
@@ -225,11 +226,14 @@ const getUserAndGroupBalances = async (req, res, next) => {
   }
 };
 
+
 module.exports = {
   getUserById,
   getUsers,
   updateUser,
   deleteUser,
   getUserAndGroupBalances,
-  loginUser,
+  googleLoginUser,
+  createUserApp,
+  login,
 };
