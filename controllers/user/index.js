@@ -72,7 +72,7 @@ const createUserApp = async (req, res, next) => {
 
     const doc = await User.findOne(filters);
     if (doc) {
-      return res.status(400).json({message: " Email Is Already OR Mobile Number Exist"});
+      return res.status(400).json({message: " Email OR Mobile Number Already Exist"});
     }
 
     const currentUser = await createUser(req.body, true);  // Password is required for app login

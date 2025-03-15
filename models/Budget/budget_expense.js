@@ -23,6 +23,10 @@ const BudgetExpenseSchema = new mongoose.Schema(
     expense_name: {
       type: String,
     },
+    expense_date: {
+      type: Date,
+      default: Date.now, // Set default value to the current date and time
+    },
     created_by: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -48,13 +52,8 @@ const BudgetExpenseSchema = new mongoose.Schema(
     },
     group_name: {
       type: String,
-      default: "General", // Default group for expenses if user does not specify one
+      default: "general", // Default group for expenses if user does not specify one
     },
-    // group_id: {
-    //   type: mongoose.Schema.Types.ObjectId,
-    //   ref: "Group",
-    //   default: null, // Can be null if expense is not assigned to a specific group
-    // },
     isDeleted: {
       type: Boolean,
       default: false,
