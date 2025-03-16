@@ -65,11 +65,11 @@ const UserSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
-    total_send: {
+    total_expense: {
       type: Number,
       default: 0,
     },
-    total_received: {
+    total_income: {
       type: Number,
       default: 0,
     },
