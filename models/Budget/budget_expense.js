@@ -8,10 +8,6 @@ const BudgetExpenseSchema = new mongoose.Schema(
       default: uuidv4,
       unique: true,
     },
-    expense_id: {
-      type: String,
-      unique: true,
-    },
     transaction_type: {
       type: String,
       enum: ["expense", "income"], // Differentiates between spending and receiving money
