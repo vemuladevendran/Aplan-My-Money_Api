@@ -21,7 +21,7 @@ const BudgetExpenseSchema = new mongoose.Schema(
     },
     expense_date: {
       type: Date,
-      default: Date.now, // Set default value to the current date and time
+      default: Date.now, 
     },
     created_by: {
       type: mongoose.Schema.Types.ObjectId,
