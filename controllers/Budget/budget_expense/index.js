@@ -142,20 +142,58 @@ const budgetCreateExpense = async (req, res, next) => {
   };
   
   
-  // Get all BudgetExpenses (Ensure user can only get their own expenses)
   const budgetGetAllExpenses = async (req, res, next) => {
     try {
-      const budgetExpenses = await BudgetExpense.find({ created_by: req.user.id }); // Filter expenses by user
+      let filters = { created_by: req.user.id, isDeleted: false };
   
+      // Apply expense_type filter if present
+      if (req.query.expense_type) {
+        filters.expense_type = req.query.expense_type;
+      }
+  
+      // Apply payment_type filter if present
+      if (req.query.payment_type) {
+        filters.payment_type = req.query.payment_type;
+      }
+  
+      // Apply year filter if present
+      if (req.query.year) {
+        const year = parseInt(req.query.year); // Ensure it's a number
+        const startDate = new Date(year, 0, 1); // Start of the year
+        const endDate = new Date(year, 11, 31); // End of the year
+        filters.expense_date = { $gte: startDate, $lte: endDate };
+      }
+  
+      // Apply month filter if present
+      if (req.query.month) {
+        const month = parseInt(req.query.month) - 1; // Month is 0-indexed (0 = January, 11 = December)
+        const startDate = new Date(req.query.year, month, 1); // First day of the month
+  
+        // Dynamically calculate the last day of the month
+        const lastDay = new Date(req.query.year, month + 1, 0).getDate(); // Get last day of the month
+        const endDate = new Date(req.query.year, month, lastDay); // Last day of the month
+        filters.expense_date = { $gte: startDate, $lte: endDate };
+      }
+  
+  
+      // Get filtered budget expenses
+      const budgetExpenses = await BudgetExpense.find(filters);
+  
+      // If no expenses are found, return a message
       if (!budgetExpenses || budgetExpenses.length === 0) {
         return res.status(404).json({ message: "No budget expenses found" });
       }
-      res.json(budgetExpenses);
+  
+      // Return the filtered budget expenses
+      return res.status(200).json(budgetExpenses);
     } catch (error) {
       console.log(error);
       next(error);
     }
   };
+  
+  
+
 
   const budgetSyncExpenses = async (req, res, next) => {
     try {
