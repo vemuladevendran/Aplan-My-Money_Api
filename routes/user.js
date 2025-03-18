@@ -7,6 +7,7 @@ const {
   getUsers,
   createUserApp,
   login,
+  getUserSummary
 } = require("../controllers/user/index");
 
 const {authenticateToken} = require("../services/middleware")
@@ -22,4 +23,5 @@ module.exports = function userRoutes(app) {
     app.put("/api/v1/user", authenticateToken, updateUser);
     app.delete("/api/v1/user", authenticateToken, deleteUser);
     app.get("/api/v1/user/balance-details", authenticateToken, getUserAndGroupBalances);
+    app.get("/api/v1/user/userSummary", authenticateToken, getUserSummary);
 }

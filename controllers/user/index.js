@@ -5,6 +5,7 @@ const { OAuth2Client } = require("google-auth-library");
 const { hash, verify } = require("../../services/password.js");
 const { handleDeviceLogin, generateUserToken } = require("../helper/index.js");
 
+const BudgetExpense = require('../../models/Budget/budget_expense.js');
 
 
 // Method to create a new user (common for both Google and app login)
@@ -242,6 +243,37 @@ const getUserAndGroupBalances = async (req, res, next) => {
   }
 };
 
+const getUserSummary = async (req, res, next) => {
+  try {
+    const userId = req.user.id; // Assume user is authenticated and `req.user` contains user data
+
+    // Fetch the user's summary details
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Get total records of BudgetExpenses for the user
+    const totalBudgetExpenses = await BudgetExpense.countDocuments({ created_by: userId });
+
+    // Return the user summary including the total_expense, total_income, total_balance, and total_budget_expenses
+    const userSummary = {
+      name: user.name,
+      total_expense: user.total_expense,
+      total_income: user.total_income,
+      total_balance: user.total_balance,
+      default_currency: user.default_currency,
+      total_budget_expenses: totalBudgetExpenses,
+    };
+
+    return res.status(200).json(userSummary);
+  } catch (error) {
+    console.log(error);
+    next(error);
+  }
+};
+
 
 module.exports = {
   getUserById,
@@ -252,4 +284,5 @@ module.exports = {
   googleLoginUser,
   createUserApp,
   login,
+  getUserSummary
 };

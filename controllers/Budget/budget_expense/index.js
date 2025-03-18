@@ -177,12 +177,12 @@ const budgetCreateExpense = async (req, res, next) => {
   
   
       // Get filtered budget expenses
-      const budgetExpenses = await BudgetExpense.find(filters);
+      const budgetExpenses = await BudgetExpense.find(filters).sort({ expense_date: -1 });
   
-      // If no expenses are found, return a message
-      if (!budgetExpenses || budgetExpenses.length === 0) {
-        return res.status(404).json({ message: "No budget expenses found" });
-      }
+      // // If no expenses are found, return a message
+      // if (!budgetExpenses || budgetExpenses.length === 0) {
+      //   return res.status(404).json({ message: "No budget expenses found" });
+      // }
   
       // Return the filtered budget expenses
       return res.status(200).json(budgetExpenses);
