@@ -224,7 +224,7 @@ const handleUserQuery = async (req, res, next) => {
 
 const getChats = async (req, res, next) => {
   try {
-    let filters = { created_by: req.user.id, isDeleted: false };
+    let filters = { userId: req.user.id, isDeleted: false };
     const result = await Chat.find(filters).sort({ createdAt: 1 });
     return res.status(200).json(result);
   } catch (error) {
