@@ -226,7 +226,7 @@ const getChats = async (req, res, next) => {
   try {
     let filters = { created_by: req.user.id, isDeleted: false };
     const result = await Chat.find(filters).sort({ createdAt: 1 });
-    return res.status(200).json(data);
+    return res.status(200).json(result);
   } catch (error) {
     next(error);
   }
