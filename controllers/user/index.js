@@ -5,13 +5,12 @@ const { OAuth2Client } = require("google-auth-library");
 const { hash, verify } = require("../../services/password.js");
 const { handleDeviceLogin, generateUserToken } = require("../helper/index.js");
 
-const BudgetExpense = require('../../models/Budget/budget_expense.js');
-
+const BudgetExpense = require("../../models/Budget/budget_expense.js");
 
 // Method to create a new user (common for both Google and app login)
 const createUser = async (userData, passwordRequired = false) => {
   if (passwordRequired) {
-    userData.password = await hash(userData.password);  // Hash the password if required
+    userData.password = await hash(userData.password); // Hash the password if required
   }
 
   const user = new User({ ...userData, user_id: generateUserId() });
@@ -25,7 +24,9 @@ const googleLoginUser = async (req, res, next) => {
     const { email, idToken } = req.body;
 
     if (!email || !idToken) {
-      return res.status(400).json({ message: "Email and ID Token are required." });
+      return res
+        .status(400)
+        .json({ message: "Email and ID Token are required." });
     }
 
     const existingUser = await User.findOne({ email });
@@ -33,7 +34,7 @@ const googleLoginUser = async (req, res, next) => {
     // If user doesn't exist, create them using Google login data
     let currentUser;
     if (!existingUser) {
-      currentUser = await createUser(req.body, false);  // No password needed for Google login
+      currentUser = await createUser(req.body, false); // No password needed for Google login
     } else {
       currentUser = existingUser;
     }
@@ -41,7 +42,7 @@ const googleLoginUser = async (req, res, next) => {
     const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
     await client.verifyIdToken({
       idToken,
-      audience: process.env.GOOGLE_CLIENT_ID,  // Ensure the client ID matches
+      audience: process.env.GOOGLE_CLIENT_ID, // Ensure the client ID matches
     });
 
     // Handle device login logic
@@ -50,7 +51,6 @@ const googleLoginUser = async (req, res, next) => {
     // Generate and send the token
     const token = await generateUserToken(currentUser);
     return res.status(200).json({ token });
-
   } catch (error) {
     console.error(error);
     next(error);
@@ -63,9 +63,6 @@ const createUserApp = async (req, res, next) => {
     const filters = {
       $or: [
         {
-          phone_number: req.body.phone_number,
-        },
-        {
           email: req.body.email,
         },
       ],
@@ -73,10 +70,12 @@ const createUserApp = async (req, res, next) => {
 
     const doc = await User.findOne(filters);
     if (doc) {
-      return res.status(400).json({message: " Email OR Mobile Number Already Exist"});
+      return res
+        .status(400)
+        .json({ message: " Email OR Mobile Number Already Exist" });
     }
 
-    const currentUser = await createUser(req.body, true);  // Password is required for app login
+    const currentUser = await createUser(req.body, true); // Password is required for app login
 
     // Handle device login logic
     await handleDeviceLogin(currentUser, req.body.loggedInDevices[0]);
@@ -84,7 +83,6 @@ const createUserApp = async (req, res, next) => {
     // Generate and send the token
     const token = await generateUserToken(currentUser);
     return res.status(200).json({ token });
-
   } catch (error) {
     console.log(error);
     next(error);
@@ -95,10 +93,11 @@ const createUserApp = async (req, res, next) => {
 const login = async (req, res, next) => {
   try {
     const doc = await User.findOne({ isDeleted: false, email: req.body.email });
-    if (!doc) return res.status(400).json({ message: 'Email is not found' });
+    if (!doc) return res.status(400).json({ message: "Email is not found" });
 
     const isPasswordMatch = await verify(req.body.password, doc.password);
-    if (!isPasswordMatch) return res.status(400).json({ message: 'Invalid password' });
+    if (!isPasswordMatch)
+      return res.status(400).json({ message: "Invalid password" });
 
     // Handle device login logic
     await handleDeviceLogin(doc, req.body.loggedInDevices[0]);
@@ -106,7 +105,6 @@ const login = async (req, res, next) => {
     // Generate and send the token
     const token = await generateUserToken(doc);
     return res.status(200).json({ token });
-
   } catch (error) {
     console.log(error);
     next(error);
@@ -251,11 +249,13 @@ const getUserSummary = async (req, res, next) => {
     const user = await User.findById(userId);
 
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: "User not found" });
     }
 
     // Get total records of BudgetExpenses for the user
-    const totalBudgetExpenses = await BudgetExpense.countDocuments({ created_by: userId });
+    const totalBudgetExpenses = await BudgetExpense.countDocuments({
+      created_by: userId,
+    });
 
     // Return the user summary including the total_expense, total_income, total_balance, and total_budget_expenses
     const userSummary = {
@@ -274,7 +274,6 @@ const getUserSummary = async (req, res, next) => {
   }
 };
 
-
 module.exports = {
   getUserById,
   getUsers,
@@ -284,5 +283,5 @@ module.exports = {
   googleLoginUser,
   createUserApp,
   login,
-  getUserSummary
+  getUserSummary,
 };

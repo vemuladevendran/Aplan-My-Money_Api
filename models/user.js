@@ -29,6 +29,7 @@ const UserSchema = new mongoose.Schema(
     phone_number: {
       type: String,
       trim: true,
+      unique: true
     },
     authorization: {
       type: String,

@@ -207,7 +207,7 @@ const handleUserQuery = async (req, res, next) => {
     result = await getTotalIncome(userId, dateRange);
   } else if (query.includes("spent on") || query.includes("spent for")) {
     result = await getSpendingByCategory(userId, category, dateRange);
-  } else if (/total\s+expense|spend|spending|expense\s/i.test(query)) {
+  } else if (/total\s+expense|spend|spending|expense/i.test(query)) {
     result = await getTotalExpense(userId, dateRange, category);
   } else {
     result = { message: "Query not recognized" };
