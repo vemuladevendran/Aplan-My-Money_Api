@@ -37,6 +37,6 @@ module.exports = function budgetExpenseRoutes(app) {
     authenticateToken,
     budgetSyncExpenses
   );
-  app.post("/api/v1/budget/search", authenticateToken, handleUserQuery);
+  app.get("/api/v1/budget/search", authenticateToken, handleUserQuery);
   app.get("/api/v1/budget/chat", authenticateToken, getChats);
 };
