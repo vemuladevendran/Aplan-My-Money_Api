@@ -201,7 +201,7 @@ const handleUserQuery = async (req, res, next) => {
   let result;
 
   // Adjusted order and more specific regex patterns
-  if (/highest\s+spending|highest\s+spend|most\s+spent/i.test(query)) {
+  if (/highest\s+spending|highest\s+spend|highest\s+expense\s+most\s+spent/i.test(query)) {
     result = await getHighestSpending(userId, dateRange, category);
   } else if (/total\s+income/i.test(query)) {
     result = await getTotalIncome(userId, dateRange);
