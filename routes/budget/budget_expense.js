@@ -5,12 +5,10 @@ const {
   budgetDeleteExpense,
   budgetGetAllExpenses,
   budgetSyncExpenses,
+  budgetGetMonthlyGraphData,
 } = require("../../controllers/Budget/budget_expense/index.js");
 
-const {
-  handleUserQuery,
-  getChats,
-} = require("../../controllers/Budget/nlp-search.js");
+const { handleUserQuery } = require("../../controllers/Budget/nlp-search.js");
 
 const { authenticateToken } = require("../../services/middleware.js");
 
@@ -37,6 +35,10 @@ module.exports = function budgetExpenseRoutes(app) {
     authenticateToken,
     budgetSyncExpenses
   );
+  app.get(
+    "/api/v1/budget/graphdata",
+    authenticateToken,
+    budgetGetMonthlyGraphData
+  );
   app.get("/api/v1/budget/search", authenticateToken, handleUserQuery);
-  app.get("/api/v1/budget/chat", authenticateToken, getChats);
 };

@@ -218,6 +218,55 @@ const budgetCreateExpense = async (req, res, next) => {
       next(error);
     }
   };
+
+
+
+  // graph data
+  const budgetGetMonthlyGraphData = async (req, res, next) => {
+    try {
+      const { year, month } = req.query;
+  
+      if (!year || !month) {
+        return res.status(400).json({ message: "Year and month are required." });
+      }
+  
+      const startDate = new Date(year, month - 1, 1); // Month is 0-indexed (Jan = 0)
+      const endDate = new Date(year, month, 0, 23, 59, 59); // Last day of the month
+  
+      const aggregatedData = await BudgetExpense.aggregate([
+        {
+          $match: {
+            created_by: req.user._id,
+            transaction_type: "expense",
+            isDeleted: false,
+            expense_date: { $gte: startDate, $lte: endDate },
+          },
+        },
+        {
+          $group: {
+            _id: {
+              $dateToString: { format: "%Y-%m-%d", date: "$expense_date" },
+            },
+            totalExpense: { $sum: "$amount" },
+          },
+        },
+        {
+          $sort: { _id: 1 }, // Sort by date ascending (lowest to highest)
+        },
+      ]);
+  
+      const totalMonthExpense = aggregatedData.reduce((sum, day) => sum + day.totalExpense, 0);
+  
+      return res.status(200).json({
+        daily_expenses: aggregatedData,
+        total_month_expense: totalMonthExpense,
+      });
+    } catch (error) {
+      console.log(error);
+      next(error);
+    }
+  };
+  
   
   
   module.exports = {
@@ -226,5 +275,6 @@ const budgetCreateExpense = async (req, res, next) => {
     budgetUpdateExpense,
     budgetDeleteExpense,
     budgetGetAllExpenses,
-    budgetSyncExpenses
+    budgetSyncExpenses,
+    budgetGetMonthlyGraphData
   }
