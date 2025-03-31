@@ -153,7 +153,10 @@ const budgetDeleteExpense = async (req, res, next) => {
 
 const budgetGetAllExpenses = async (req, res, next) => {
   try {
-    let filters = { created_by: req.user.id, isDeleted: false };
+    let filters = {
+      created_by: new ObjectId(req.user.id),
+      isDeleted: false,
+    };
 
     // Apply expense_type filter if present
     if (req.query.expense_type) {
@@ -165,36 +168,28 @@ const budgetGetAllExpenses = async (req, res, next) => {
       filters.payment_type = req.query.payment_type;
     }
 
-    // Apply year filter if present
-    if (req.query.year) {
-      const year = parseInt(req.query.year); // Ensure it's a number
-      const startDate = new Date(year, 0, 1); // Start of the year
-      const endDate = new Date(year, 11, 31); // End of the year
+    // Apply year and/or month filters
+    if (req.query.year && req.query.month) {
+      const year = parseInt(req.query.year);
+      const month = parseInt(req.query.month) - 1; // 0-indexed
+
+      const startDate = new Date(year, month, 1); // First day
+      const endDate = new Date(year, month + 1, 0, 23, 59, 59, 999); // Last moment of last day
+
+      filters.expense_date = { $gte: startDate, $lte: endDate };
+    } else if (req.query.year) {
+      const year = parseInt(req.query.year);
+      const startDate = new Date(year, 0, 1);
+      const endDate = new Date(year, 11, 31, 23, 59, 59, 999);
+
       filters.expense_date = { $gte: startDate, $lte: endDate };
     }
 
-    // Apply month filter if present
-    if (req.query.month) {
-      const month = parseInt(req.query.month) - 1; // Month is 0-indexed (0 = January, 11 = December)
-      const startDate = new Date(req.query.year, month, 1); // First day of the month
-
-      // Dynamically calculate the last day of the month
-      const lastDay = new Date(req.query.year, month + 1, 0).getDate(); // Get last day of the month
-      const endDate = new Date(req.query.year, month, lastDay); // Last day of the month
-      filters.expense_date = { $gte: startDate, $lte: endDate };
-    }
-
-    // Get filtered budget expenses
+    // Fetch filtered expenses
     const budgetExpenses = await BudgetExpense.find(filters).sort({
       expense_date: -1,
     });
 
-    // // If no expenses are found, return a message
-    // if (!budgetExpenses || budgetExpenses.length === 0) {
-    //   return res.status(404).json({ message: "No budget expenses found" });
-    // }
-
-    // Return the filtered budget expenses
     return res.status(200).json(budgetExpenses);
   } catch (error) {
     console.log(error);
