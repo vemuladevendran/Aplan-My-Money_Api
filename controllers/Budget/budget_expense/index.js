@@ -11,7 +11,7 @@ const budgetCreateExpense = async (req, res, next) => {
 
     const budgetExpense = new BudgetExpense({
       ...req.body,
-      currency_code: req.user.default_currency,
+      currency_code: req.user.fullData.default_currency,
       created_by: req.user.id, // Associate the expense with the logged-in user
     });
 
