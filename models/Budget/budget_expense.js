@@ -34,7 +34,6 @@ const BudgetExpenseSchema = new mongoose.Schema(
     },
     currency_code: {
       type: String,
-      default: "USD",
       trim: true,
     },
     description: {
