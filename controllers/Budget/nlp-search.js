@@ -46,6 +46,7 @@ const predefinedCategories = [
 function extractDateRange(query) {
   const parsedDate = Chrono.parseDate(query); // Parse the natural language date
 
+  
   if (!parsedDate) return null; // If no valid date found, return null
 
   let startDate, endDate;
