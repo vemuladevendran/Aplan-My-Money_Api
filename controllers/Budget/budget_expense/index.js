@@ -11,6 +11,7 @@ const budgetCreateExpense = async (req, res, next) => {
 
     const budgetExpense = new BudgetExpense({
       ...req.body,
+      currency_code: req.user.default_currency,
       created_by: req.user.id, // Associate the expense with the logged-in user
     });
 
@@ -303,10 +304,12 @@ const budgetGetCategoryRanking = async (req, res, next) => {
             $push: {
               id: "$id",
               expense_name: "$expense_name",
+              expense_type: "$expense_type",
               amount: "$amount",
               expense_date: "$expense_date",
               description: "$description",
               payment_type: "$payment_type",
+              transaction_type: "$transaction_type",
               group_name: "$group_name",
               currency_code: "$currency_code",
               createdAt: "$createdAt",
