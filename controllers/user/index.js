@@ -255,6 +255,7 @@ const getUserSummary = async (req, res, next) => {
     // Get total records of BudgetExpenses for the user
     const totalBudgetExpenses = await BudgetExpense.countDocuments({
       created_by: userId,
+      isDeleted: false,
     });
 
     // Return the user summary including the total_expense, total_income, total_balance, and total_budget_expenses
