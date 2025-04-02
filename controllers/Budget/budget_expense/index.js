@@ -145,7 +145,7 @@ const budgetDeleteExpense = async (req, res, next) => {
     // Save the updated user data
     await user.save();
 
-    res.json(budgetExpense);
+    return res.json(budgetExpense);
   } catch (error) {
     console.log(error);
     next(error);

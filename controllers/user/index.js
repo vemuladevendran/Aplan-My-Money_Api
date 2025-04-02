@@ -260,6 +260,7 @@ const getUserSummary = async (req, res, next) => {
     // Return the user summary including the total_expense, total_income, total_balance, and total_budget_expenses
     const userSummary = {
       name: user.name,
+      googleImg: user.googleImg,
       total_expense: user.total_expense,
       total_income: user.total_income,
       total_balance: user.total_balance,
