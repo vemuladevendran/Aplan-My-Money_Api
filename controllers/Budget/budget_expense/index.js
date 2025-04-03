@@ -191,7 +191,10 @@ const budgetGetAllExpenses = async (req, res, next) => {
       expense_date: -1,
     });
 
-    return res.status(200).json(budgetExpenses);
+    return res
+      .set("Cache-Control", "public, max-age=3600")
+      .status(200)
+      .json(budgetExpenses);
   } catch (error) {
     console.log(error);
     next(error);
