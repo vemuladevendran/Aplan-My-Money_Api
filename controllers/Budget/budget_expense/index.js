@@ -191,10 +191,9 @@ const budgetGetAllExpenses = async (req, res, next) => {
       expense_date: -1,
     });
 
-    return res
-      .set("Cache-Control", "public, max-age=3600")
-      .status(200)
-      .json(budgetExpenses);
+    // res.set("Cache-Control", "public, max-age=3600")
+
+    return res.status(200).json(budgetExpenses);
   } catch (error) {
     console.log(error);
     next(error);
@@ -229,6 +228,7 @@ const budgetSyncExpenses = async (req, res, next) => {
 };
 
 // graph data
+
 const budgetGetMonthlyGraphData = async (req, res, next) => {
   try {
     const { year, month } = req.query;
@@ -240,11 +240,10 @@ const budgetGetMonthlyGraphData = async (req, res, next) => {
     const startDate = new Date(year, month - 1, 1);
     const endDate = new Date(year, month, 0, 23, 59, 59);
 
-    const aggregatedData = await BudgetExpense.aggregate([
+    const rawData = await BudgetExpense.aggregate([
       {
         $match: {
-          created_by: new ObjectId(req.user.id), // 🔥 fixed here
-          transaction_type: "expense",
+          created_by: new ObjectId(req.user.id),
           isDeleted: false,
           expense_date: { $gte: startDate, $lte: endDate },
         },
@@ -252,24 +251,84 @@ const budgetGetMonthlyGraphData = async (req, res, next) => {
       {
         $group: {
           _id: {
-            $dateToString: { format: "%Y-%m-%d", date: "$expense_date" },
+            date: {
+              $dateToString: { format: "%Y-%m-%d", date: "$expense_date" },
+            },
+            transaction_type: "$transaction_type",
           },
-          totalExpense: { $sum: "$amount" },
+          totalAmount: { $sum: "$amount" },
         },
       },
       {
-        $sort: { _id: 1 },
+        $group: {
+          _id: "$_id.date",
+          data: {
+            $push: {
+              type: "$_id.transaction_type",
+              amount: "$totalAmount",
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          date: "$_id",
+          income: {
+            $ifNull: [
+              {
+                $first: {
+                  $filter: {
+                    input: "$data",
+                    as: "item",
+                    cond: { $eq: ["$$item.type", "income"] },
+                  },
+                },
+              },
+              { amount: 0 },
+            ],
+          },
+          expense: {
+            $ifNull: [
+              {
+                $first: {
+                  $filter: {
+                    input: "$data",
+                    as: "item",
+                    cond: { $eq: ["$$item.type", "expense"] },
+                  },
+                },
+              },
+              { amount: 0 },
+            ],
+          },
+        },
+      },
+      {
+        $project: {
+          date: 1,
+          income: "$income.amount",
+          expense: "$expense.amount",
+        },
+      },
+      {
+        $sort: { date: 1 },
       },
     ]);
 
-    const totalMonthExpense = aggregatedData.reduce(
-      (sum, day) => sum + day.totalExpense,
+    const totalMonthExpense = rawData.reduce(
+      (sum, day) => sum + (day.expense || 0),
+      0
+    );
+    const totalMonthIncome = rawData.reduce(
+      (sum, day) => sum + (day.income || 0),
       0
     );
 
     return res.status(200).json({
-      daily_expenses: aggregatedData,
+      daily_data: rawData,
       total_month_expense: totalMonthExpense,
+      total_month_income: totalMonthIncome,
     });
   } catch (error) {
     console.log(error);
