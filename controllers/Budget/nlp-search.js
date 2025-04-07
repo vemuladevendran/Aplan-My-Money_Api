@@ -7,62 +7,74 @@ const nlp = require("compromise");
 
 // Predefined list of categories
 const predefinedCategories = [
-  "beverage",
-  "book",
-  "pet",
-  "food",
-  "home",
-  "healthcare",
-  "electricity",
-  "gas",
-  "water",
-  "rent",
-  "car",
-  "shoes",
-  "bag",
-  "clothes",
-  "beauty",
-  "travel",
-  "film",
-  "fun",
-  "games",
-  "sport",
-  "gym",
-  "education",
-  "camera",
-  "tech",
-  "phone",
-  "wedding",
-  "snacks",
-  "meat",
-  "fruit",
-  "vegetables",
-  "social",
-  "bath",
-  "music",
-  "others",
+  "beverage", "book", "pet", "food", "home", "healthcare", "electricity", "gas", "water", "rent",
+  "car", "shoes", "bag", "clothes", "beauty", "travel", "film", "fun", "games", "sport", "gym",
+  "education", "camera", "tech", "phone", "wedding", "snacks", "meat", "fruit", "vegetables",
+  "social", "bath", "music", "others",
 ];
 
+// ✅ Updated extractDateRange using Chrono.parse()
 function extractDateRange(query) {
-  const parsedDate = Chrono.parseDate(query); // Parse the natural language date
+  const lowerQuery = query.toLowerCase();
 
-  
-  if (!parsedDate) return null; // If no valid date found, return null
+  // Manual handling for "this month"
+  if (lowerQuery.includes("this month")) {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), now.getMonth(), 1);
+    const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    start.setUTCHours(0, 0, 0, 0);
+    end.setUTCHours(23, 59, 59, 999);
+    return { start: start.toISOString(), end: end.toISOString() };
+  }
 
-  let startDate, endDate;
+  // Handle "last month"
+  if (lowerQuery.includes("last month")) {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const end = new Date(now.getFullYear(), now.getMonth(), 0);
+    start.setUTCHours(0, 0, 0, 0);
+    end.setUTCHours(23, 59, 59, 999);
+    return { start: start.toISOString(), end: end.toISOString() };
+  }
 
-  startDate = new Date(parsedDate);
-  startDate.setDate(1); // Set to the first day of the month
-  endDate = new Date(parsedDate.getFullYear(), parsedDate.getMonth() + 1, 0); // Last day of the month
+  // Handle "next month"
+  if (lowerQuery.includes("next month")) {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    const end = new Date(now.getFullYear(), now.getMonth() + 2, 0);
+    start.setUTCHours(0, 0, 0, 0);
+    end.setUTCHours(23, 59, 59, 999);
+    return { start: start.toISOString(), end: end.toISOString() };
+  }
 
+  // Default chrono behavior
+  const results = Chrono.parse(query);
+  if (!results.length) return null;
+
+  const parsed = results[0];
+  const startDate = parsed.start ? parsed.start.date() : null;
+  const endDate = parsed.end ? parsed.end.date() : null;
+
+  if (!startDate) return null;
+
+  if (!endDate) {
+    startDate.setUTCHours(0, 0, 0, 0);
+    const singleDayEnd = new Date(startDate);
+    singleDayEnd.setUTCHours(23, 59, 59, 999);
+    return { start: startDate.toISOString(), end: singleDayEnd.toISOString() };
+  }
+
+  startDate.setUTCHours(0, 0, 0, 0);
+  endDate.setUTCHours(23, 59, 59, 999);
   return { start: startDate.toISOString(), end: endDate.toISOString() };
 }
+
 
 function extractCategory(query) {
   let matchedCategories = [];
 
   predefinedCategories.forEach((category) => {
-    const regex = new RegExp(category, "i"); // Case-insensitive matching
+    const regex = new RegExp(category, "i");
     if (regex.test(query)) {
       matchedCategories.push(category);
     }
@@ -77,23 +89,19 @@ function extractAmount(query) {
   return amount.length > 0 ? amount[0].value : null;
 }
 
-// Fetch Total Expense for a user and specific date range
 const getTotalExpense = async (userId, dateRange, category) => {
   const filters = {
-    created_by: new ObjectId(userId), // Use the `new` keyword to create ObjectId
+    created_by: new ObjectId(userId),
     isDeleted: false,
   };
 
   if (dateRange) {
-    let startDate = new Date(dateRange.start);
-    let endDate = new Date(dateRange.end);
-
-    startDate.setUTCHours(0, 0, 0, 0); // Start of the day (UTC)
-    endDate.setUTCHours(23, 59, 59, 999); // End of the day (UTC)
+    const startDate = new Date(dateRange.start);
+    const endDate = new Date(dateRange.end);
 
     filters.expense_date = {
-      $gte: new Date(startDate.toISOString()), // Ensure proper ISO format for querying
-      $lt: new Date(endDate.toISOString()), // Ensure proper ISO format for querying
+      $gte: startDate,
+      $lt: endDate,
     };
   }
 
@@ -122,18 +130,17 @@ const getTotalExpense = async (userId, dateRange, category) => {
   }
 };
 
-// Fetch Highest Spending for a user and specific date range
 const getHighestSpending = async (userId, dateRange, category) => {
-  const filters = { created_by: new ObjectId(userId), isDeleted: false }; // Ensure ObjectId
+  const filters = {
+    created_by: new ObjectId(userId),
+    isDeleted: false,
+  };
 
   if (dateRange) {
     const startDate = new Date(dateRange.start);
     const endDate = new Date(dateRange.end);
 
-    startDate.setUTCHours(0, 0, 0, 0);
-    endDate.setUTCHours(23, 59, 59, 999);
-
-    filters.expense_date = { $gte: startDate, $lt: endDate }; // Use $lt
+    filters.expense_date = { $gte: startDate, $lt: endDate };
   }
 
   if (category) {
@@ -156,10 +163,9 @@ const getHighestSpending = async (userId, dateRange, category) => {
   }
 };
 
-// Fetch Total Income for a user and specific date range
 const getTotalIncome = async (userId, dateRange) => {
   const filters = {
-    created_by: userId,
+    created_by: new ObjectId(userId),
     isDeleted: false,
     transaction_type: "income",
   };
@@ -191,7 +197,11 @@ const getTotalIncome = async (userId, dateRange) => {
   }
 };
 
-// Main Function to Handle User Query
+// Placeholder for category-based spend query (optional)
+const getSpendingByCategory = async (userId, category, dateRange) => {
+  return getTotalExpense(userId, dateRange, category);
+};
+
 const handleUserQuery = async (req, res, next) => {
   const userId = req.user.id;
   const query = req.query.data;
@@ -201,8 +211,7 @@ const handleUserQuery = async (req, res, next) => {
 
   let result;
 
-  // Adjusted order and more specific regex patterns
-  if (/highest\s+spending|highest\s+spend|highest\s+expense\s+most\s+spent/i.test(query)) {
+  if (/highest\s+spending|highest\s+spend|highest\s+expense|most\s+spent/i.test(query)) {
     result = await getHighestSpending(userId, dateRange, category);
   } else if (/total\s+income/i.test(query)) {
     result = await getTotalIncome(userId, dateRange);
@@ -220,20 +229,10 @@ const handleUserQuery = async (req, res, next) => {
     userId: req.user.id,
   };
   await Chat.create(data);
+  
   return res.status(200).json(data);
-};
-
-const getChats = async (req, res, next) => {
-  try {
-    let filters = { userId: req.user.id, isDeleted: false };
-    const result = await Chat.find(filters).sort({ createdAt: 1 });
-    return res.status(200).json(result);
-  } catch (error) {
-    next(error);
-  }
 };
 
 module.exports = {
   handleUserQuery,
-  getChats
 };
