@@ -9,7 +9,7 @@ const {
   budgetGetCategoryRanking
 } = require("../../controllers/Budget/budget_expense/index.js");
 
-const { handleUserQuery } = require("../../controllers/Budget/nlp-search.js");
+const { handleUserQuery } = require("../../controllers/Budget/nlp-search-1.js");
 
 const { authenticateToken } = require("../../services/middleware.js");
 
