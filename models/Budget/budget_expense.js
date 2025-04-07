@@ -42,7 +42,7 @@ const BudgetExpenseSchema = new mongoose.Schema(
     },
     payment_type: {
       type: String,
-      enum: ["Cash", "Card", "UPI", "Other"],
+      enum: ["Cash", "Card", "UPI", "Online", "Other"],
       default: "Card",
     },
     group_name: {

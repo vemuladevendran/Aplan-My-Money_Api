@@ -29,14 +29,14 @@ const UserSchema = new mongoose.Schema(
     phone_number: {
       type: String,
       trim: true,
-      unique: true
+      unique: true,
     },
     authorization: {
       type: String,
       enum: ["google", "app"],
     },
     password: {
-      type: String
+      type: String,
     },
     default_currency: {
       type: String,
@@ -54,6 +54,13 @@ const UserSchema = new mongoose.Schema(
         ref: "Group",
       },
     ],
+    ledgerGroups: [
+      {
+        groupName: String,
+        image: String
+      },
+    ],
+    tags: [],
     total_amount_you_owed: {
       type: Number,
       default: 0,

@@ -265,11 +265,25 @@ const getUserSummary = async (req, res, next) => {
       total_expense: user.total_expense,
       total_income: user.total_income,
       total_balance: user.total_balance,
+      ledgerGroups: user.ledgerGroups,
       default_currency: user.default_currency,
       total_budget_expenses: totalBudgetExpenses,
     };
 
     return res.status(200).json(userSummary);
+  } catch (error) {
+    console.log(error);
+    next(error);
+  }
+};
+
+const addLedgerGroup = async (req, res, next) => {
+  try {
+    const userId = req.user.id; // User ID from the token
+    const user = await User.findById(userId);
+    user.ledgerGroups.push(req.body);
+    await user.save();
+    return res.json("New Ledger Group Added");
   } catch (error) {
     console.log(error);
     next(error);
@@ -286,4 +300,5 @@ module.exports = {
   createUserApp,
   login,
   getUserSummary,
+  addLedgerGroup
 };
