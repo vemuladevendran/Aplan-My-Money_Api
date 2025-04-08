@@ -1,13 +1,15 @@
 const axios = require("axios");
 const qs = require("qs");
 
+const DUCKLING_URL = process.env.DUCKLING_URL;
+
 const getDateRangeFromDuckling = async (query) => {
   try {
     const now = new Date();
     const reftime = now.toISOString(); // Use current date/time
 
     const response = await axios.post(
-      "http://localhost:8000/parse",
+      `${DUCKLING_URL}/parse`,
       qs.stringify({
         text: query,
         locale: "en_US",
@@ -44,6 +46,5 @@ const getDateRangeFromDuckling = async (query) => {
     return null;
   }
 };
-
 
 module.exports = { getDateRangeFromDuckling };
