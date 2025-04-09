@@ -9,6 +9,7 @@ const morgan = require("morgan");
 require('./db');
 const userRoutes = require("./routes/user");
 const groupRoutes = require("./routes/group");
+const filesRoutes = require("./routes/files");
 const budgetExpenseRoutes = require("./routes/budget/budget_expense");
 const app = express();
 app.use(express.urlencoded({ extended: true }));
@@ -23,6 +24,7 @@ app.use("/static", express.static("uploads"));
 // routes
 userRoutes(app);
 groupRoutes(app);
+filesRoutes(app);
 budgetExpenseRoutes(app)
 
 
