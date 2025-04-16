@@ -396,32 +396,40 @@ const budgetGetCategoryRanking = async (req, res, next) => {
 
 const searchExpenses = async (req, res, next) => {
   try {
-    const { searchText, expense_type = [], group_name = [] } = req.query;
+    let { searchText, expense_type, group_name } = req.query;
     const userId = req.user.id;
 
-    const matchConditions = {
+    // Normalize to arrays
+    expense_type = Array.isArray(expense_type)
+      ? expense_type
+      : expense_type
+      ? [expense_type]
+      : [];
+
+    group_name = Array.isArray(group_name)
+      ? group_name
+      : group_name
+      ? [group_name]
+      : [];
+
+    const matchStage = {
       created_by: new ObjectId(userId),
       isDeleted: false,
     };
 
-    // Add group_name filter only if provided
     if (group_name.length > 0) {
-      matchConditions.group_name = { $in: group_name };
+      matchStage.group_name = { $in: group_name };
     }
 
-    // Add expense_type filter only if provided
     if (expense_type.length > 0) {
-      matchConditions.expense_type = { $in: expense_type };
+      matchStage.expense_type = { $in: expense_type };
     }
 
-    // Add searchText filter only if provided and not empty
-    if (searchText && searchText.trim() !== "") {
-      matchConditions.description = { $regex: searchText.trim(), $options: "i" };
+    if (searchText?.trim()) {
+      matchStage.description = { $regex: searchText.trim(), $options: "i" };
     }
 
-    const pipeline = [{ $match: matchConditions }];
-
-    const results = await BudgetExpense.aggregate(pipeline);
+    const results = await BudgetExpense.aggregate([{ $match: matchStage }]);
 
     return res.status(200).json(results);
   } catch (error) {
@@ -429,6 +437,7 @@ const searchExpenses = async (req, res, next) => {
     next(error);
   }
 };
+
 
 
 
