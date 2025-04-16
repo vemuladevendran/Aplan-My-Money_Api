@@ -399,36 +399,27 @@ const searchExpenses = async (req, res, next) => {
     const { searchText, expense_type = [], group_name = [] } = req.query;
     const userId = req.user.id;
 
-    const matchStage = {
-      $match: {
-        created_by: new ObjectId(userId),
-        isDeleted: false,
-        ...(group_name.length > 0 && { group_name: { $in: group_name } }),
-      },
+    const matchConditions = {
+      created_by: new ObjectId(userId),
+      isDeleted: false,
     };
 
-    const pipeline = [matchStage];
+    // Add group_name filter only if provided
+    if (group_name.length > 0) {
+      matchConditions.group_name = { $in: group_name };
+    }
 
-    // Apply expense_type filter if provided
+    // Add expense_type filter only if provided
     if (expense_type.length > 0) {
-      pipeline.push({
-        $match: {
-          expense_type: { $in: expense_type },
-        },
-      });
+      matchConditions.expense_type = { $in: expense_type };
     }
 
-    // Apply searchText filter if provided
+    // Add searchText filter only if provided and not empty
     if (searchText && searchText.trim() !== "") {
-      pipeline.push({
-        $match: {
-          description: {
-            $regex: searchText,
-            $options: "i", // case-insensitive
-          },
-        },
-      });
+      matchConditions.description = { $regex: searchText.trim(), $options: "i" };
     }
+
+    const pipeline = [{ $match: matchConditions }];
 
     const results = await BudgetExpense.aggregate(pipeline);
 
@@ -438,6 +429,7 @@ const searchExpenses = async (req, res, next) => {
     next(error);
   }
 };
+
 
 
 
