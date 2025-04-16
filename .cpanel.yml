@@ -1,0 +1,7 @@
+name: "my-money-api"
+deployment:
+  tasks:
+    - export NODE_ENV=production
+    - npm install
+    - npm run build || echo "No build script found, skipping..."
+    - npm start
