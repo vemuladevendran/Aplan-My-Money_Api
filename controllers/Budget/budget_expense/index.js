@@ -392,6 +392,56 @@ const budgetGetCategoryRanking = async (req, res, next) => {
   }
 };
 
+
+
+const searchExpenses = async (req, res, next) => {
+  try {
+    const { searchText, expense_type = [], group_name = [] } = req.query;
+    const userId = req.user.id;
+
+    const matchStage = {
+      $match: {
+        created_by: new ObjectId(userId),
+        isDeleted: false,
+        ...(group_name.length > 0 && { group_name: { $in: group_name } }),
+      },
+    };
+
+    const pipeline = [matchStage];
+
+    // Apply expense_type filter if provided
+    if (expense_type.length > 0) {
+      pipeline.push({
+        $match: {
+          expense_type: { $in: expense_type },
+        },
+      });
+    }
+
+    // Apply searchText filter if provided
+    if (searchText && searchText.trim() !== "") {
+      pipeline.push({
+        $match: {
+          description: {
+            $regex: searchText,
+            $options: "i", // case-insensitive
+          },
+        },
+      });
+    }
+
+    const results = await BudgetExpense.aggregate(pipeline);
+
+    return res.status(200).json(results);
+  } catch (error) {
+    console.log(error);
+    next(error);
+  }
+};
+
+
+
+
 module.exports = {
   budgetCreateExpense,
   budgetGetExpenseById,
@@ -401,4 +451,5 @@ module.exports = {
   budgetSyncExpenses,
   budgetGetMonthlyGraphData,
   budgetGetCategoryRanking,
+  searchExpenses
 };

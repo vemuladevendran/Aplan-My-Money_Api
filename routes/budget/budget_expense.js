@@ -6,7 +6,8 @@ const {
   budgetGetAllExpenses,
   budgetSyncExpenses,
   budgetGetMonthlyGraphData,
-  budgetGetCategoryRanking
+  budgetGetCategoryRanking,
+  searchExpenses
 } = require("../../controllers/Budget/budget_expense/index.js");
 
 const { handleUserQuery } = require("../../controllers/Budget/nlp-search-1.js");
@@ -48,5 +49,6 @@ module.exports = function budgetExpenseRoutes(app) {
     budgetGetCategoryRanking
   );
 
-  app.get("/api/v1/budget/search", authenticateToken, handleUserQuery);
+  app.get("/api/v1/budget/chat", authenticateToken, handleUserQuery);
+  app.get("/api/v1/budget/search-expense", authenticateToken, searchExpenses);
 };
