@@ -40,7 +40,7 @@ const UserSchema = new mongoose.Schema(
     },
     default_currency: {
       type: String,
-      default: "USD",
+      // default: "USD",
       trim: true,
     },
     timezone: {

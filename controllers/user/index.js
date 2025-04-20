@@ -4,19 +4,69 @@ const { generateUserId } = require("../../utility/generateid.js");
 const { OAuth2Client } = require("google-auth-library");
 const { hash, verify } = require("../../services/password.js");
 const { handleDeviceLogin, generateUserToken } = require("../helper/index.js");
+const axios = require("axios");
+const currencyCodes = require("currency-codes");
 
 const BudgetExpense = require("../../models/Budget/budget_expense.js");
 
-// Method to create a new user (common for both Google and app login)
-const createUser = async (userData, passwordRequired = false) => {
-  if (passwordRequired) {
-    userData.password = await hash(userData.password); // Hash the password if required
+const getLocationByIP = async (ip) => {
+  try {
+    const res = await axios.get(`http://ip-api.com/json/${ip}`);
+    return res.data; // countryCode is in res.data.countryCode
+  } catch (error) {
+    console.error("IP location fetch failed:", error.message);
+    return null;
   }
+};
+
+const getCurrencyByCountryCode = (code) => {
+  if (!code || typeof code !== "string") return "USD"; // Fallback early
+
+  try {
+    const currency = currencyCodes.country(code);
+    return currency && currency.length ? currency[0].code : "USD";
+  } catch (err) {
+    console.error("Currency lookup failed:", err.message);
+    return "USD";
+  }
+};
+
+
+// Method to create a new user (common for both Google and app login)
+const createUser = async (userData, req, passwordRequired = false) => {
+  if (passwordRequired) {
+    userData.password = await hash(userData.password);
+  }
+
+  let ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+  if (
+    ip === "::1" ||
+    ip === "127.0.0.1" ||
+    ip.startsWith("192.") ||
+    ip.startsWith("10.") ||
+    ip.startsWith("172.")
+  ) {
+    ip = "8.8.8.8"; // fallback for localhost/internal testing
+  }
+
+  console.log(ip, "ip");
+
+  const location = await getLocationByIP(ip);
+  console.log(location, "location");
+
+  const currency = location
+    ? getCurrencyByCountryCode(location.countryCode)
+    : "USD";
+
+  console.log(currency, "--------");
+
+  userData.default_currency = currency;
 
   const user = new User({ ...userData, user_id: generateUserId() });
   await user.save();
   return user;
 };
+
 
 // Google login handler
 const googleLoginUser = async (req, res, next) => {
@@ -34,7 +84,7 @@ const googleLoginUser = async (req, res, next) => {
     // If user doesn't exist, create them using Google login data
     let currentUser;
     if (!existingUser) {
-      currentUser = await createUser(req.body, false); // No password needed for Google login
+      currentUser = await createUser(req.body, req, false); // No password needed for Google login
     } else {
       currentUser = existingUser;
     }
@@ -75,7 +125,7 @@ const createUserApp = async (req, res, next) => {
         .json({ message: " Email OR Mobile Number Already Exist" });
     }
 
-    const currentUser = await createUser(req.body, true); // Password is required for app login
+    const currentUser = await createUser(req.body, req, true); // Password is required for app login
 
     // Handle device login logic
     await handleDeviceLogin(currentUser, req.body.loggedInDevices[0]);
@@ -300,5 +350,5 @@ module.exports = {
   createUserApp,
   login,
   getUserSummary,
-  addLedgerGroup
+  addLedgerGroup,
 };
