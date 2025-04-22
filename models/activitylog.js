@@ -22,7 +22,13 @@ const activityLogSchema = new mongoose.Schema(
           'settlement_added', 
           'settlement_updated', 
           'group_updated', 
-          'value_updated'
+          'value_updated',
+          'expense_added',
+          'expense_updated',
+          'income_added',
+          'income_updated',
+          'expense_deleted',
+          'income_deleted',
         ]
       },
       details: {

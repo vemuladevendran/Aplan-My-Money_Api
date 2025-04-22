@@ -1,3 +1,5 @@
+const activityController = require("../../activity");
+
 const BudgetExpense = require("../../../models/Budget/budget_expense.js");
 const User = require("../../../models/user.js");
 const mongoose = require("mongoose");
@@ -32,7 +34,13 @@ const budgetCreateExpense = async (req, res, next) => {
 
     // Save the updated user data
     await user.save();
-
+    await activityController.logActivity(
+      req.user.id,
+      transaction_type === "income"
+        ? "income_added"
+        : "expense_added",
+      `New transaction is happened the amount is ${amount}`
+    );
     return res.status(201).json(budgetExpense);
   } catch (error) {
     console.log(error);
@@ -145,6 +153,13 @@ const budgetDeleteExpense = async (req, res, next) => {
     // Save the updated user data
     await user.save();
 
+    await activityController.logActivity(
+      req.user.id,
+      transaction_type === "income"
+        ? "income_deleted"
+        : "expense_deleted",
+      `Transaction has been deleted  the amount is ${amount}`
+    );
     return res.json(budgetExpense);
   } catch (error) {
     console.log(error);
@@ -403,14 +418,14 @@ const searchExpenses = async (req, res, next) => {
     expense_type = Array.isArray(expense_type)
       ? expense_type
       : expense_type
-      ? [expense_type]
-      : [];
+        ? [expense_type]
+        : [];
 
     group_name = Array.isArray(group_name)
       ? group_name
       : group_name
-      ? [group_name]
-      : [];
+        ? [group_name]
+        : [];
 
     const matchStage = {
       created_by: new ObjectId(userId),
