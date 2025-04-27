@@ -14,7 +14,7 @@ const activityLogSchema = new mongoose.Schema(
         required: true,
       },
       action: {
-        ttype: String,
+        type: String,
         required: true,
         enum: [
           'split_created', 
