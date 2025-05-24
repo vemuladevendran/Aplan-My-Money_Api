@@ -38,28 +38,28 @@ const createUser = async (userData, req, passwordRequired = false) => {
     userData.password = await hash(userData.password);
   }
 
-  let ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
-  if (
-    ip === "::1" ||
-    ip === "127.0.0.1" ||
-    ip.startsWith("192.") ||
-    ip.startsWith("10.") ||
-    ip.startsWith("172.")
-  ) {
-    ip = "8.8.8.8"; // fallback for localhost/internal testing
-  }
+  // let ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+  // if (
+  //   ip === "::1" ||
+  //   ip === "127.0.0.1" ||
+  //   ip.startsWith("192.") ||
+  //   ip.startsWith("10.") ||
+  //   ip.startsWith("172.")
+  // ) {
+  //   ip = "8.8.8.8"; // fallback for localhost/internal testing
+  // }
 
-  console.log(ip, "ip");
+  // console.log(ip, "ip");
 
-  const location = await getLocationByIP(ip);
-  console.log(location, "location");
+  // const location = await getLocationByIP(ip);
+  // console.log(location, "location");
 
-  const currency = location
-    ? getCurrencyByCountryCode(location.countryCode)
-    : "USD";
+  // const currency = location
+  //   ? getCurrencyByCountryCode(location.countryCode)
+  //   : "USD";
 
 
-  userData.default_currency = currency;
+  // userData.default_currency = currency;
 
   const user = new User({ ...userData, user_id: generateUserId() });
   await user.save();
