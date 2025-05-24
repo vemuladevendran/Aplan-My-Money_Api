@@ -11,6 +11,7 @@ const {
 } = require("../../controllers/Budget/budget_expense/index.js");
 
 const { handleUserQuery } = require("../../controllers/Budget/nlp-search-1.js");
+const { predictExpense } = require("../../controllers/predict/index.js");
 
 const { authenticateToken } = require("../../services/middleware.js");
 
@@ -51,4 +52,7 @@ module.exports = function budgetExpenseRoutes(app) {
 
   app.get("/api/v1/budget/chat", authenticateToken, handleUserQuery);
   app.get("/api/v1/budget/search-expense", authenticateToken, searchExpenses);
+
+
+  app.get("/api/v1/budget/predict", authenticateToken, predictExpense)
 };

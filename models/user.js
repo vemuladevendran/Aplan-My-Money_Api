@@ -29,7 +29,10 @@ const UserSchema = new mongoose.Schema(
     phone_number: {
       type: String,
       trim: true,
+      unique: true,
+      sparse: true, // ✅ Allows multiple documents with `null`
     },
+    
     authorization: {
       type: String,
       enum: ["google", "app"],

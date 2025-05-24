@@ -58,7 +58,6 @@ const createUser = async (userData, req, passwordRequired = false) => {
     ? getCurrencyByCountryCode(location.countryCode)
     : "USD";
 
-  console.log(currency, "--------");
 
   userData.default_currency = currency;
 

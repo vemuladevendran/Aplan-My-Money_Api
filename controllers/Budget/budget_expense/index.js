@@ -141,6 +141,8 @@ const budgetDeleteExpense = async (req, res, next) => {
     // Get the user
     const user = await User.findById(req.user.id);
 
+    
+
     // Revert the totals based on the transaction type
     if (budgetExpense.transaction_type === "income") {
       user.total_income -= budgetExpense.amount;
@@ -155,12 +157,12 @@ const budgetDeleteExpense = async (req, res, next) => {
 
     await activityController.logActivity(
       req.user.id,
-      transaction_type === "income"
+      budgetExpense.transaction_type === "income"
         ? "income_deleted"
         : "expense_deleted",
-      `Transaction has been deleted  the amount is ${amount}`
+      `Transaction has been deleted  the amount is ${budgetExpense.amount}`
     );
-    return res.json(budgetExpense);
+    return res.status(200).json(budgetExpense);
   } catch (error) {
     console.log(error);
     next(error);
