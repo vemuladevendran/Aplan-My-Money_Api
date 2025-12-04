@@ -11,6 +11,8 @@ const userRoutes = require("./routes/user");
 const groupRoutes = require("./routes/group");
 const filesRoutes = require("./routes/files");
 const budgetExpenseRoutes = require("./routes/budget/budget_expense");
+const budgetRoutes = require("./routes/budget/budget");
+const savingsRoutes = require("./routes/budget/savings");
 const app = express();
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan("tiny"));
@@ -25,7 +27,9 @@ app.use("/static", express.static("uploads"));
 userRoutes(app);
 groupRoutes(app);
 filesRoutes(app);
-budgetExpenseRoutes(app)
+budgetExpenseRoutes(app);
+budgetRoutes(app);
+savingsRoutes(app);
 
 
 // error middleware 

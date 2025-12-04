@@ -49,6 +49,10 @@ const BudgetExpenseSchema = new mongoose.Schema(
       type: String,
       default: "general", // Default group for expenses if user does not specify one
     },
+    tags: {
+      type: [String],
+      default: [],
+    },
     isDeleted: {
       type: Boolean,
       default: false,

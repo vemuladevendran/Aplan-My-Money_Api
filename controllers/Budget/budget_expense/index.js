@@ -1,7 +1,9 @@
 const activityController = require("../../activity");
 
 const BudgetExpense = require("../../../models/Budget/budget_expense.js");
+const Budget = require("../../../models/Budget/Budget.js");
 const User = require("../../../models/user.js");
+const emailService = require("../../../services/emailService.js");
 const mongoose = require("mongoose");
 
 const { ObjectId } = mongoose.Types;
@@ -19,6 +21,55 @@ const budgetCreateExpense = async (req, res, next) => {
 
     // Save the expense
     await budgetExpense.save();
+
+    // Check Budget Logic
+    if (transaction_type === "expense") {
+      const currentMonth = new Date().getMonth();
+      const currentYear = new Date().getFullYear();
+      const startDate = new Date(currentYear, currentMonth, 1);
+      const endDate = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59);
+
+      const budget = await Budget.findOne({
+        user_id: req.user.id,
+        period: "monthly",
+        isDeleted: false,
+      });
+
+      if (budget) {
+        const totalExpenses = await BudgetExpense.aggregate([
+          {
+            $match: {
+              created_by: new mongoose.Types.ObjectId(req.user.id),
+              transaction_type: "expense",
+              isDeleted: false,
+              expense_date: { $gte: startDate, $lte: endDate },
+            },
+          },
+          {
+            $group: {
+              _id: null,
+              total: { $sum: "$amount" },
+            },
+          },
+        ]);
+
+        const currentTotal =
+          totalExpenses.length > 0 ? totalExpenses[0].total : 0;
+
+        if (currentTotal > budget.amount) {
+          // Send Notification
+          const user = await User.findById(req.user.id);
+          if (user && user.email) {
+            await emailService.sendEmail(
+              user.email,
+              "Budget Exceeded Alert",
+              `You have exceeded your monthly budget of ${budget.amount} ${budget.currency}. Current total: ${currentTotal} ${budget.currency}.`,
+              `<p>You have exceeded your monthly budget of <strong>${budget.amount} ${budget.currency}</strong>.</p><p>Current total: <strong>${currentTotal} ${budget.currency}</strong>.</p>`
+            );
+          }
+        }
+      }
+    }
 
     // Get the user
     const user = await User.findById(req.user.id);
