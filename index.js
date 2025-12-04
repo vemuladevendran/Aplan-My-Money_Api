@@ -13,6 +13,10 @@ const filesRoutes = require("./routes/files");
 const budgetExpenseRoutes = require("./routes/budget/budget_expense");
 const budgetRoutes = require("./routes/budget/budget");
 const savingsRoutes = require("./routes/budget/savings");
+const friendRoutes = require("./routes/friend");
+const cardRoutes = require("./routes/card");
+const analyticsRoutes = require("./routes/analytics");
+const bankRoutes = require("./routes/bank");
 const app = express();
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan("tiny"));
@@ -30,6 +34,10 @@ filesRoutes(app);
 budgetExpenseRoutes(app);
 budgetRoutes(app);
 savingsRoutes(app);
+friendRoutes(app);
+cardRoutes(app);
+analyticsRoutes(app);
+bankRoutes(app);
 
 
 // error middleware 

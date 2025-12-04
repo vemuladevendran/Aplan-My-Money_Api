@@ -1,8 +1,46 @@
 const Expense = require('../../models/expense.js');
+const User = require('../../models/user.js');
+const Friend = require('../../models/Friend.js');
+const mongoose = require('mongoose');
 
 const createExpense = async (req, res, next) => {
   try {
-    const expense = new Expense({ ...req.body });
+    const { splits, group_id, card_id } = req.body;
+    const userId = req.user.id;
+
+    // Resolve user_ids in splits if they are strings (e.g., "UI-574107")
+    const resolvedSplits = [];
+    if (splits && splits.length > 0) {
+      for (const split of splits) {
+        if (split.user_id && typeof split.user_id === "string" && !mongoose.Types.ObjectId.isValid(split.user_id)) {
+           // It's a custom user_id string, find the user
+           const user = await User.findOne({ user_id: split.user_id });
+           if (!user) {
+             return res.status(404).json({ message: `User with ID ${split.user_id} not found` });
+           }
+           
+           // Check if friend (if not in a group context, or strictly enforcing friendship)
+           // For now, assuming if they are in the same group or friends, it's allowed.
+           // You might want to add strict friendship check here if needed.
+
+           resolvedSplits.push({ ...split, user_id: user._id });
+        } else {
+          resolvedSplits.push(split);
+        }
+      }
+    }
+
+    const expenseData = {
+      ...req.body,
+      splits: resolvedSplits.length > 0 ? resolvedSplits : splits,
+      created_by: userId,
+    };
+
+    if (card_id) {
+        expenseData.card_id = card_id;
+    }
+
+    const expense = new Expense(expenseData);
     await expense.save();
     res.status(201).json(expense);
   } catch (error) {

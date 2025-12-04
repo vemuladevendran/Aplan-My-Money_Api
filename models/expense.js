@@ -41,6 +41,10 @@ const ExpenseSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    card_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Card",
+    },
     split_type: {
       type: String,
       enum: ["equal", "unequal", "percentage"],
